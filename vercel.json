@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npx prisma generate && next build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["gru1"],
+  "functions": {
+    "src/app/api/verificar-documento/route.ts": { "maxDuration": 60 },
+    "src/app/api/asaas/checkout/route.ts": { "maxDuration": 30 },
+    "src/app/api/upload/route.ts": { "maxDuration": 30 }
+  }
+}

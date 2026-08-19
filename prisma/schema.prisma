@@ -1,0 +1,398 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  // Prisma 7: provider deve ser literal (sem env()) e url vive só em prisma.config.ts.
+  // LOCAL:      "sqlite"      DATABASE_URL="file:./dev.db"
+  // PRODUÇÃO:   trocar para "postgresql"  DATABASE_URL="postgresql://..." antes do build/deploy
+  provider = "sqlite"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  phone         String?
+  bio           String?
+  city          String?
+  state         String?
+  // roles: BUYER | SELLER | AGENT | ADMIN
+  role          String    @default("BUYER")
+  verified      Boolean   @default(false)
+  cpf           String?   @unique
+  // Campos extras para corretores
+  creci         String?   @unique
+  creciState    String?
+  agencyName    String?
+  agencyPhone   String?
+  // Plano ativo
+  planId        String?
+  planExpiresAt DateTime?
+  stripeCustomerId String?
+  asaasCustomerId  String?
+  referralCode     String?  @unique
+  referredById     String?
+  referralCredits  Int      @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts             Account[]
+  sessions             Session[]
+  properties           Property[]
+  favorites            Favorite[]
+  sentMessages         Message[]               @relation("SentMessages")
+  receivedMessages     Message[]               @relation("ReceivedMessages")
+  reviewsGiven         Review[]                @relation("ReviewsGiven")
+  reviewsReceived      Review[]                @relation("ReviewsReceived")
+  neighborhoodReviews  NeighborhoodReview[]
+  conversations        ConversationParticipant[]
+  subscriptions        Subscription[]
+  contracts            Contract[]
+  boosts               PropertyBoost[]
+  savedSearches        SavedSearch[]
+  pushSubscriptions    PushSubscription[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Property {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  story         String?
+  type          String   @default("HOUSE")
+  status        String   @default("ACTIVE")
+  listingType   String   @default("SALE")
+  price         Float
+  rentPrice     Float?
+  area          Float
+  bedrooms      Int?
+  bathrooms     Int?
+  parkingSpaces Int?
+  furnished     Boolean  @default(false)
+  acceptsPets   Boolean  @default(false)
+  // Custos extras (aluguel)
+  condoFee      Float?
+  condoFeeBy    String?  @default("LOCATARIO") // LOCADOR | LOCATARIO
+  iptu          Float?
+  iptuBy        String?  @default("LOCATARIO") // LOCADOR | LOCATARIO
+  address       String
+  city          String
+  state         String
+  neighborhood  String?
+  zipCode       String?
+  latitude      Float?
+  longitude     Float?
+  featured      Boolean  @default(false)
+  verified      Boolean  @default(false)
+  views         Int      @default(0)
+  videoUrl      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  images        PropertyImage[]
+  favorites     Favorite[]
+  features      PropertyFeature[]
+  reviews       Review[]
+  conversations Conversation[]
+  boosts        PropertyBoost[]
+  contracts     Contract[]
+  documents     PropertyDocument[]
+}
+
+model PropertyImage {
+  id        String   @id @default(cuid())
+  url       String
+  caption   String?
+  order     Int      @default(0)
+  isCover   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model PropertyFeature {
+  id   String @id @default(cuid())
+  name String
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id])
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String @id @default(cuid())
+  conversationId String
+  userId         String
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  status    String   @default("SENT")
+  createdAt DateTime @default(now())
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId   String
+  sender     User   @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User   @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+
+  reviewerId String
+  reviewer   User   @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewedId String
+  reviewed   User   @relation("ReviewsReceived", fields: [reviewedId], references: [id])
+
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id])
+}
+
+model NeighborhoodReview {
+  id            String   @id @default(cuid())
+  neighborhood  String
+  city          String
+  state         String
+  safety        Int
+  quietness     Int
+  accessibility Int
+  commerce      Int
+  comment       String?
+  createdAt     DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+// ─── ALERTAS DE IMÓVEIS ──────────────────────────────────────────────────────
+
+model SavedSearch {
+  id              String   @id @default(cuid())
+  name            String                        // "Casa em SP até R$ 500k"
+  filters         String                        // JSON dos filtros
+  active          Boolean  @default(true)
+  lastNotifiedAt  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── PLANOS E PAGAMENTOS ───────────────────────────────────────────
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  // BASIC | DESTAQUE | PROFISSIONAL | IMOBILIARIA
+  plan                 String
+  status               String   @default("ACTIVE")
+  // Stripe IDs
+  stripeSubscriptionId String?  @unique
+  stripeInvoiceId      String?
+  stripePriceId        String?
+  amountPaid           Float    @default(0)
+  currency             String   @default("BRL")
+  billingCycle         String   @default("MONTHLY")
+  startedAt            DateTime @default(now())
+  expiresAt            DateTime
+  canceledAt           DateTime?
+  createdAt            DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── SISTEMA FOGUETE ──────────────────────────────────────────────
+
+model PropertyBoost {
+  id          String   @id @default(cuid())
+  // FOGUETE_7 | FOGUETE_15 | FOGUETE_30
+  boostType   String
+  status      String   @default("ACTIVE")
+  amountPaid  Float
+  startedAt   DateTime @default(now())
+  expiresAt   DateTime
+  stripePaymentIntentId String?
+  createdAt   DateTime @default(now())
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+// ─── DOCUMENTOS VERIFICADOS ──────────────────────────────
+
+model PropertyDocument {
+  id             String   @id @default(cuid())
+  propertyId     String
+  // MATRICULA | IPTU | CERTIDAO_NEGATIVA | HABITE_SE
+  documentType   String   @default("MATRICULA")
+  status         String   @default("PENDING")
+  originalName   String?
+  // Dados extraídos pela IA
+  extractedOwners   String?
+  extractedArea     String?
+  extractedAddress  String?
+  extractedRegNumber String?
+  extractedLiens    String?
+  aiAnalysis     String?
+  ownerMatch     Boolean?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+// ─── CONTRATOS ───────────────────────────────────────────────────
+
+model Contract {
+  id           String   @id @default(cuid())
+  // PROMESSA_COMPRA_VENDA | LOCACAO | PERMUTA | CESSAO
+  type         String
+  status       String   @default("DRAFT")
+  title        String
+  content      String
+  signedAt     DateTime?
+  buyerName    String?
+  buyerCpf     String?
+  sellerName   String?
+  sellerCpf    String?
+  witnessName1 String?
+  witnessName2 String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id])
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+// ─── ANALYTICS ───────────────────────────────────────────────────
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  referrer  String?
+  createdAt DateTime @default(now())
+
+  @@index([path])
+  @@index([createdAt])
+}
+
+// ─── AVALIAÇÃO INSTANTÂNEA (AVM) ──────────────────────────────────
+
+model ValuationRequest {
+  id            String   @id @default(cuid())
+  name          String
+  email         String
+  phone         String?
+  type          String
+  listingType   String   @default("SALE")
+  city          String
+  state         String
+  neighborhood  String?
+  area          Float
+  bedrooms      Int?
+  estimateMin   Float
+  estimateMax   Float
+  sampleSize    Int      @default(0)
+  contacted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ─── NOTIFICAÇÕES PUSH ─────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  userId String?
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

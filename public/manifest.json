@@ -1,0 +1,42 @@
+{
+  "name": "Immovi",
+  "short_name": "Immovi",
+  "description": "Compre, venda e alugue imóveis com transparência e humanidade.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f9fc",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "lifestyle"],
+  "lang": "pt-BR",
+  "shortcuts": [
+    {
+      "name": "Buscar Imóveis",
+      "short_name": "Buscar",
+      "description": "Encontrar imóveis",
+      "url": "/imoveis",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Anunciar Imóvel",
+      "short_name": "Anunciar",
+      "description": "Publicar novo anúncio",
+      "url": "/imoveis/novo",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
