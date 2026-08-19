@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx prisma/seed.ts",
-    "db:reset": "npx prisma migrate reset --force && npx tsx prisma/seed.ts"
+    "db:reset": "npx prisma migrate reset --force && npx tsx prisma/seed.ts",
+    "predev": "node scripts/set-prisma-provider.mjs",
+    "prebuild": "node scripts/set-prisma-provider.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
