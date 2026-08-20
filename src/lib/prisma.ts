@@ -11,10 +11,10 @@ function createPrismaClient() {
     return new PrismaClient({ adapter } as any)
   }
 
-  // PostgreSQL / MySQL em produção — conexão via URL direta
-  return new PrismaClient({
-    datasources: { db: { url: process.env.DATABASE_URL } },
-  } as any)
+  // PostgreSQL (Neon) em produção — adapter obrigatório desde o Prisma 7
+  const { PrismaNeon } = require('@prisma/adapter-neon')
+  const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL })
+  return new PrismaClient({ adapter } as any)
 }
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
