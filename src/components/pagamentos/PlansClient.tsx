@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, Zap, Star, Crown, Loader2, CreditCard } from 'lucide-react'
+import { CheckCircle2, Zap, Star, Crown, CreditCard } from 'lucide-react'
 import { formatPrice, PLANOS, type PlanoId } from '@/lib/stripe'
 import { cn } from '@/lib/utils'
+import AsaasCheckout from '@/components/pagamentos/AsaasCheckout'
+import { cancelSubscription } from '@/app/actions/subscription'
 
 interface PlansClientProps {
   plans: typeof PLANOS
@@ -28,25 +30,28 @@ const COLORS: Record<PlanoId, { ring: string; btn: string; badge: string }> = {
 
 export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansClientProps) {
   const router = useRouter()
-  const [loading, setLoading] = useState<string | null>(null)
+  const [checkout, setCheckout] = useState<{ planId: PlanoId; billingType: 'CREDIT_CARD' | 'PIX' } | null>(null)
 
-  const handleSelectPlan = async (planId: PlanoId, billingType: 'CREDIT_CARD' | 'UNDEFINED') => {
+  const [downgrading, setDowngrading] = useState(false)
+
+  const openCheckout = (planId: PlanoId, billingType: 'CREDIT_CARD' | 'PIX') => {
     if (!isLoggedIn) { router.push('/login?redirect=/planos'); return }
-    if (planId === 'BASIC') return
     if (planId === currentPlan) return
+    setCheckout({ planId, billingType })
+  }
 
-    setLoading(planId)
+  const handleDowngradeToBasic = async () => {
+    if (!isLoggedIn) { router.push('/login?redirect=/planos'); return }
+    if (currentPlan === 'BASIC') return
+    if (!confirm('Isso cancela a renovação do seu plano atual. Seu acesso continua até o fim do período já pago. Confirmar?')) return
+
+    setDowngrading(true)
     try {
-      const res = await fetch('/api/asaas/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'plan', planId, billingType }),
-      })
-      const data = await res.json()
-      if (data.invoiceUrl) window.location.href = data.invoiceUrl
-      else if (data.error) alert(data.error)
+      const result = await cancelSubscription()
+      if (result?.error) alert(result.error)
+      else router.refresh()
     } finally {
-      setLoading(null)
+      setDowngrading(false)
     }
   }
 
@@ -114,37 +119,30 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
                   </div>
                 ) : plan.preco === 0 ? (
                   <button
-                    onClick={() => handleSelectPlan(id, 'UNDEFINED')}
-                    disabled={loading === id}
+                    onClick={handleDowngradeToBasic}
+                    disabled={downgrading}
                     className={cn(
                       'w-full py-3 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2',
                       c.btn,
                       'disabled:opacity-60'
                     )}
                   >
-                    Começar grátis
+                    {downgrading ? 'Aguarde...' : 'Voltar para o Básico'}
                   </button>
                 ) : (
                   <div className="space-y-2">
                     <button
-                      onClick={() => handleSelectPlan(id, 'CREDIT_CARD')}
-                      disabled={loading === id}
+                      onClick={() => openCheckout(id, 'CREDIT_CARD')}
                       className={cn(
                         'w-full py-3 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2',
-                        c.btn,
-                        'disabled:opacity-60'
+                        c.btn
                       )}
                     >
-                      {loading === id ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> Aguarde...</>
-                      ) : (
-                        <><CreditCard className="w-4 h-4" /> Assinar {plan.nome}</>
-                      )}
+                      <CreditCard className="w-4 h-4" /> Assinar {plan.nome}
                     </button>
                     <button
-                      onClick={() => handleSelectPlan(id, 'UNDEFINED')}
-                      disabled={loading === id}
-                      className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-60"
+                      onClick={() => openCheckout(id, 'PIX')}
+                      className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       ou pagar com PIX/Boleto (renovação manual todo mês)
                     </button>
@@ -189,6 +187,17 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
           </table>
         </div>
       </div>
+
+      {checkout && (
+        <AsaasCheckout
+          type="plan"
+          planId={checkout.planId}
+          price={plans[checkout.planId].preco / 100}
+          description={`Plano ${plans[checkout.planId].nome}`}
+          initialBillingType={checkout.billingType}
+          onClose={() => setCheckout(null)}
+        />
+      )}
     </div>
   )
 }

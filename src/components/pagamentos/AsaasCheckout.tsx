@@ -18,6 +18,7 @@ interface AsaasCheckoutProps {
   propertyId?: string
   price: number
   description: string
+  initialBillingType?: BillingType
   onClose?: () => void
 }
 
@@ -28,10 +29,10 @@ const BILLING_OPTIONS: { id: BillingType; label: string; icon: React.ElementType
 ]
 
 export default function AsaasCheckout({
-  type, planId, boostType, propertyId, price, description, onClose,
+  type, planId, boostType, propertyId, price, description, initialBillingType, onClose,
 }: AsaasCheckoutProps) {
   const router = useRouter()
-  const [billingType, setBillingType] = useState<BillingType>('PIX')
+  const [billingType, setBillingType] = useState<BillingType>(initialBillingType || 'PIX')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [copied, setCopied] = useState(false)

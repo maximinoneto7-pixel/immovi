@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Rocket, Zap, CheckCircle2, Loader2 } from 'lucide-react'
+import { Rocket, Zap, CheckCircle2 } from 'lucide-react'
 import { FOGUETES, formatPrice } from '@/lib/stripe'
 import { cn } from '@/lib/utils'
+import AsaasCheckout from '@/components/pagamentos/AsaasCheckout'
 
 interface BoostPanelProps {
   propertyId: string
@@ -12,40 +13,10 @@ interface BoostPanelProps {
 
 export default function BoostPanel({ propertyId, currentBoost }: BoostPanelProps) {
   const [selected, setSelected] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [showCheckout, setShowCheckout] = useState(false)
 
   const isActive = currentBoost && new Date(currentBoost.expiresAt) > new Date()
-
-  const handleBoost = async () => {
-    if (!selected) return
-    setLoading(true)
-    try {
-      const res = await fetch('/api/boost', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ propertyId, boostType: selected }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setSuccess(true)
-      } else if (data.error) {
-        alert(data.error)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (success) {
-    return (
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center">
-        <Rocket className="w-10 h-10 text-amber-500 mx-auto mb-2" />
-        <div className="font-bold text-gray-900 mb-1">🚀 Foguete ativado!</div>
-        <p className="text-sm text-gray-600">Seu anúncio agora aparece no topo dos resultados.</p>
-      </div>
-    )
-  }
+  const selectedFoguete = selected ? FOGUETES[selected as keyof typeof FOGUETES] : null
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -89,22 +60,29 @@ export default function BoostPanel({ propertyId, currentBoost }: BoostPanelProps
           </div>
 
           <button
-            onClick={handleBoost}
-            disabled={!selected || loading}
+            onClick={() => setShowCheckout(true)}
+            disabled={!selected}
             className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Ativando...</>
-            ) : (
-              <><Rocket className="w-4 h-4" /> Ativar Foguete</>
-            )}
+            <Rocket className="w-4 h-4" /> Ativar Foguete
           </button>
 
           <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-400">
             <Zap className="w-3.5 h-3.5" />
-            Pagamento seguro — ativação imediata
+            Pagamento seguro via Asaas — PIX, boleto ou cartão
           </div>
         </>
+      )}
+
+      {showCheckout && selectedFoguete && (
+        <AsaasCheckout
+          type="boost"
+          boostType={selectedFoguete.id}
+          propertyId={propertyId}
+          price={selectedFoguete.preco / 100}
+          description={`Foguete — ${selectedFoguete.label}`}
+          onClose={() => setShowCheckout(false)}
+        />
       )}
     </div>
   )
