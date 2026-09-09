@@ -110,6 +110,25 @@ const infoRow = (icon: string, label: string, value: string) =>
 
 // ─── 1. Boas-vindas ───────────────────────────────────────────────────────────
 
+export async function sendPasswordResetEmail(to: string, name: string, resetUrl: string) {
+  const html = layout(`
+    <h1 style="color:#111827;font-size:22px;margin:0 0 20px;">Redefinir sua senha</h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 24px;">
+      Recebemos um pedido para redefinir a senha da sua conta Immovi. Clique no botão abaixo para escolher uma nova senha.
+    </p>
+
+    ${btn(resetUrl, 'Redefinir senha')}
+
+    <p style="color:#9ca3af;font-size:12px;text-align:center;margin:16px 0 0;">
+      Este link expira em 1 hora. Se você não pediu essa redefinição, pode ignorar este e-mail com segurança —
+      sua senha continua a mesma.
+    </p>
+  `, `Redefinir sua senha no Immovi`)
+
+  return send(to, `🔒 Redefinir sua senha — Immovi`, html)
+}
+
 export async function sendWelcomeEmail(to: string, name: string, role: string) {
   const roleMap: Record<string, string> = {
     BUYER: 'Comprador(a)',
