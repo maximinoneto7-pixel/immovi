@@ -1,7 +1,7 @@
 'use client'
 
 import { signIn } from 'next-auth/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 
 interface OAuthButtonsProps {
@@ -30,6 +30,16 @@ function AppleIcon() {
 export default function OAuthButtons({ callbackUrl = '/' }: OAuthButtonsProps) {
   const [loadingGoogle, setLoadingGoogle] = useState(false)
   const [loadingApple, setLoadingApple] = useState(false)
+  const [providers, setProviders] = useState<{ google?: boolean; apple?: boolean } | null>(null)
+
+  // Só mostra os botões dos provedores realmente configurados no servidor —
+  // evita oferecer um login que sempre vai falhar (ex: Apple sem credenciais).
+  useEffect(() => {
+    fetch('/api/auth/providers')
+      .then((r) => r.json())
+      .then((data) => setProviders({ google: !!data.google, apple: !!data.apple }))
+      .catch(() => setProviders({}))
+  }, [])
 
   const handleGoogle = async () => {
     setLoadingGoogle(true)
@@ -40,6 +50,8 @@ export default function OAuthButtons({ callbackUrl = '/' }: OAuthButtonsProps) {
     setLoadingApple(true)
     await signIn('apple', { callbackUrl })
   }
+
+  if (providers && !providers.google && !providers.apple) return null
 
   return (
     <div className="space-y-3">
@@ -52,25 +64,29 @@ export default function OAuthButtons({ callbackUrl = '/' }: OAuthButtonsProps) {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={handleGoogle}
-        disabled={loadingGoogle}
-        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        {loadingGoogle ? <Loader2 className="w-5 h-5 animate-spin text-gray-400" /> : <GoogleIcon />}
-        Continuar com Google
-      </button>
+      {providers?.google && (
+        <button
+          type="button"
+          onClick={handleGoogle}
+          disabled={loadingGoogle}
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {loadingGoogle ? <Loader2 className="w-5 h-5 animate-spin text-gray-400" /> : <GoogleIcon />}
+          Continuar com Google
+        </button>
+      )}
 
-      <button
-        type="button"
-        onClick={handleApple}
-        disabled={loadingApple}
-        className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-black text-white rounded-xl text-sm font-medium hover:bg-gray-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        {loadingApple ? <Loader2 className="w-5 h-5 animate-spin" /> : <AppleIcon />}
-        Continuar com Apple
-      </button>
+      {providers?.apple && (
+        <button
+          type="button"
+          onClick={handleApple}
+          disabled={loadingApple}
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-black text-white rounded-xl text-sm font-medium hover:bg-gray-900 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {loadingApple ? <Loader2 className="w-5 h-5 animate-spin" /> : <AppleIcon />}
+          Continuar com Apple
+        </button>
+      )}
     </div>
   )
 }
