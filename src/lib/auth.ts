@@ -62,7 +62,12 @@ if (process.env.APPLE_ID && process.env.APPLE_CLIENT_SECRET) {
 // Em produção, o domínio às vezes serve tanto immovi.com.br quanto
 // www.immovi.com.br (redirecionamento entre os dois). Compartilhar os
 // cookies entre os dois subdomínios evita que o fluxo de login quebre
-// (ex: erro MissingCSRF) quando a requisição começa num host e termina no outro.
+// quando a requisição começa num host e termina no outro.
+//
+// csrfToken fica de fora: em HTTPS o NextAuth nomeia esse cookie com o
+// prefixo `__Host-`, que por especificação do navegador proíbe qualquer
+// atributo Domain — setar um aqui faz o navegador rejeitar o cookie
+// (o que causa exatamente o erro MissingCSRF que estamos corrigindo).
 const isProdDomain = (process.env.NEXTAUTH_URL || '').includes('immovi.com.br')
 const cookieDomain = isProdDomain ? '.immovi.com.br' : undefined
 
@@ -73,7 +78,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         cookies: {
           sessionToken: { options: { domain: cookieDomain } },
           callbackUrl: { options: { domain: cookieDomain } },
-          csrfToken: { options: { domain: cookieDomain } },
           pkceCodeVerifier: { options: { domain: cookieDomain } },
           state: { options: { domain: cookieDomain } },
         },
