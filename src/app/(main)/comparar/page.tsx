@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import { formatCurrency, formatArea, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
+import { formatCurrency, formatArea, isRural, mainArea, M2_PER_HECTARE, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
 import { Scale, Shield, Star, CheckCircle2, XCircle, MapPin } from 'lucide-react'
 
 export default async function CompararPage({
@@ -97,8 +97,18 @@ export default async function CompararPage({
                     {[
                       { label: 'Tipo', render: (p: typeof ordered[number]) => PROPERTY_TYPES[p.type] || p.type },
                       { label: 'Finalidade', render: (p: typeof ordered[number]) => LISTING_TYPES[p.listingType] || p.listingType },
-                      { label: 'Área', render: (p: typeof ordered[number]) => formatArea(p.area) },
-                      { label: 'Preço/m²', render: (p: typeof ordered[number]) => formatCurrency((p.listingType === 'RENT' ? (p.rentPrice || p.price) : p.price) / p.area) },
+                      { label: 'Área', render: (p: typeof ordered[number]) => formatArea(p.area, p.type) },
+                      { label: 'Área construída', render: (p: typeof ordered[number]) => p.builtArea ? formatArea(p.builtArea) : '—' },
+                      {
+                        // Rural compara por hectare; casa, pela área construída
+                        label: 'Preço por área',
+                        render: (p: typeof ordered[number]) => {
+                          const value = p.listingType === 'RENT' ? (p.rentPrice || p.price) : p.price
+                          return isRural(p.type)
+                            ? `${formatCurrency(value / (p.area / M2_PER_HECTARE))}/ha`
+                            : `${formatCurrency(value / mainArea(p))}/m²`
+                        },
+                      },
                       { label: 'Quartos', render: (p: typeof ordered[number]) => p.bedrooms ?? '—' },
                       { label: 'Banheiros', render: (p: typeof ordered[number]) => p.bathrooms ?? '—' },
                       { label: 'Vagas', render: (p: typeof ordered[number]) => p.parkingSpaces ?? '—' },

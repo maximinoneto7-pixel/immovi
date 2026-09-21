@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { SlidersHorizontal, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
-import { PROPERTY_TYPES } from '@/lib/utils'
+import { PROPERTY_TYPES, M2_PER_HECTARE, isRural } from '@/lib/utils'
 import LocationAutocomplete from '@/components/common/LocationAutocomplete'
 
 interface FiltersPanelProps {
@@ -15,6 +15,10 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
   const [open, setOpen] = useState<Record<string, boolean>>({
     tipo: true, finalidade: true, preco: true, local: true, quartos: true, area: false,
   })
+  // A URL guarda a área sempre em m²; para imóvel rural o painel mostra e recebe hectares
+  const toDisplayArea = (m2: string | undefined, type: string | undefined) =>
+    m2 && isRural(type) ? String(Number(m2) / M2_PER_HECTARE) : (m2 || '')
+
   const [filters, setFilters] = useState({
     type: currentParams.type || '',
     listingType: currentParams.listingType || '',
@@ -23,8 +27,8 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
     state: currentParams.state || '',
     city: currentParams.city || '',
     bedrooms: currentParams.bedrooms || '',
-    minArea: currentParams.minArea || '',
-    maxArea: currentParams.maxArea || '',
+    minArea: toDisplayArea(currentParams.minArea, currentParams.type),
+    maxArea: toDisplayArea(currentParams.maxArea, currentParams.type),
   })
   const [cityInput, setCityInput] = useState(
     currentParams.city
@@ -46,10 +50,21 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
 
   const toggle = (key: string) => setOpen((s) => ({ ...s, [key]: !s[key] }))
 
+  // Rural ↔ urbano muda a unidade da área, então os valores digitados não valem mais
+  const setType = (type: string) => setFilters((f) => ({
+    ...f,
+    type,
+    ...(isRural(type) !== isRural(f.type) ? { minArea: '', maxArea: '' } : {}),
+  }))
+
   const applyFilters = () => {
     const params = new URLSearchParams()
     if (currentParams.q) params.set('q', currentParams.q)
-    Object.entries(filters).forEach(([k, v]) => { if (v) params.set(k, v) })
+    Object.entries(filters).forEach(([k, v]) => {
+      if (!v) return
+      const isArea = k === 'minArea' || k === 'maxArea'
+      params.set(k, isArea && isRural(filters.type) ? String(Math.round(Number(v) * M2_PER_HECTARE)) : v)
+    })
     router.push(`/imoveis?${params.toString()}`)
   }
 
@@ -96,13 +111,13 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
         {/* Tipo com contagens ao vivo */}
         <Section id="tipo" label="Tipo de Imóvel">
           <div className="space-y-1">
-            <button onClick={() => setFilters((f) => ({ ...f, type: '' }))}
+            <button onClick={() => setType('')}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${filters.type === '' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
               <span>Todos os tipos</span>
               <span className="text-xs text-gray-400">{Object.values(typeCounts).reduce((a, b) => a + b, 0) || ''}</span>
             </button>
             {Object.entries(PROPERTY_TYPES).map(([key, label]) => (
-              <button key={key} onClick={() => setFilters((f) => ({ ...f, type: f.type === key ? '' : key }))}
+              <button key={key} onClick={() => setType(filters.type === key ? '' : key)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${filters.type === key ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
                 <span>{label}</span>
                 {typeCounts[key] != null && (
@@ -161,10 +176,10 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
         </Section>
 
         {/* Área */}
-        <Section id="area" label="Área (m²)">
+        <Section id="area" label={isRural(filters.type) ? 'Área (hectares)' : 'Área (m²)'}>
           <div className="space-y-2">
-            {[{ key: 'minArea', placeholder: 'Área mínima (m²)' }, { key: 'maxArea', placeholder: 'Área máxima (m²)' }].map(({ key, placeholder }) => (
-              <input key={key} type="number" placeholder={placeholder}
+            {[{ key: 'minArea', placeholder: 'Área mínima' }, { key: 'maxArea', placeholder: 'Área máxima' }].map(({ key, placeholder }) => (
+              <input key={key} type="number" step="any" placeholder={`${placeholder} (${isRural(filters.type) ? 'ha' : 'm²'})`}
                 value={filters[key as keyof typeof filters]}
                 onChange={(e) => setFilters((f) => ({ ...f, [key]: e.target.value }))}
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />

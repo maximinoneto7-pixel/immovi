@@ -15,7 +15,8 @@ import {
   MessageCircle, Heart, Share2, Calendar, Eye, CheckCircle2,
   Home, BookOpen, Leaf, Users, Video, ExternalLink,
 } from 'lucide-react'
-import { formatCurrency, formatArea, formatDate, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
+import { formatCurrency, formatArea, formatAlqueires, formatDate, isRural, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
+import { typeFields } from '@/lib/property-fields'
 
 export default async function PropertyDetailPage({
   params,
@@ -97,10 +98,18 @@ export default async function PropertyDetailPage({
       availability: 'https://schema.org/InStock',
       url: `${BASE_URL}/imoveis/${property.id}`,
     },
-    floorSize: { '@type': 'QuantitativeValue', value: property.area, unitCode: 'MTK' },
+    // floorSize é área de piso: não se aplica a terreno nem a imóvel rural
+    ...(property.type !== 'LAND' && !isRural(property.type)
+      ? { floorSize: { '@type': 'QuantitativeValue', value: property.builtArea ?? property.area, unitCode: 'MTK' } }
+      : {}),
     ...(property.bedrooms != null ? { numberOfRooms: property.bedrooms } : {}),
     ...(property.bathrooms != null ? { numberOfBathroomsTotal: property.bathrooms } : {}),
   }
+
+  // "Área do terreno (m²)" → "Área do terreno": a unidade já aparece no valor
+  const areaLabel = typeFields(property.type).areaLabel.replace(/\s*\(.*\)$/, '')
+  const specCount = 1 + [property.builtArea, property.bedrooms, property.bathrooms, property.parkingSpaces]
+    .filter((v) => v != null).length
 
   return (
     <>
@@ -225,11 +234,21 @@ export default async function PropertyDetailPage({
                 </div>
 
                 {/* Specs */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className={`grid grid-cols-2 gap-4 ${specCount >= 5 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>
+                  {property.builtArea != null && (
+                    <div className="text-center p-3 bg-gray-50 rounded-xl">
+                      <Home className="w-5 h-5 text-indigo-500 mx-auto mb-1" />
+                      <div className="font-semibold text-gray-900">{formatArea(property.builtArea)}</div>
+                      <div className="text-xs text-gray-500">Área construída</div>
+                    </div>
+                  )}
                   <div className="text-center p-3 bg-gray-50 rounded-xl">
                     <Maximize2 className="w-5 h-5 text-indigo-500 mx-auto mb-1" />
-                    <div className="font-semibold text-gray-900">{formatArea(property.area)}</div>
-                    <div className="text-xs text-gray-500">Área</div>
+                    <div className="font-semibold text-gray-900">{formatArea(property.area, property.type)}</div>
+                    <div className="text-xs text-gray-500">{areaLabel}</div>
+                    {isRural(property.type) && (
+                      <div className="text-[11px] text-gray-400 mt-0.5">≈ {formatAlqueires(property.area)}</div>
+                    )}
                   </div>
                   {property.bedrooms != null && (
                     <div className="text-center p-3 bg-gray-50 rounded-xl">
@@ -358,7 +377,9 @@ export default async function PropertyDetailPage({
               {/* Features */}
               {property.features.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                  <h2 className="text-lg font-bold text-gray-900 mb-4">Características e diferenciais</h2>
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">
+                    {isRural(property.type) ? 'Benfeitorias' : 'Características e diferenciais'}
+                  </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {property.features.map((f) => (
                       <div key={f.id} className="flex items-center gap-2 text-sm text-gray-700">

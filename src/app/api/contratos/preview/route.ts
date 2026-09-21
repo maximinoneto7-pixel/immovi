@@ -1,10 +1,20 @@
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { generateContract, type ContractData, type Parte } from '@/lib/contract-templates'
+import { canCreateContracts, CONTRACTS_PAYWALL_MESSAGE } from '@/lib/subscription'
 
 export async function POST(request: Request) {
   const session = await auth()
   if (!session?.user?.id) {
     return Response.json({ error: 'Não autenticado.' }, { status: 401 })
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { planId: true, planExpiresAt: true, role: true },
+  })
+  if (!canCreateContracts(user)) {
+    return Response.json({ error: CONTRACTS_PAYWALL_MESSAGE }, { status: 403 })
   }
 
   const body = await request.json()

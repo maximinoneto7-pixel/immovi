@@ -2,13 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { Home, Search, Shield, Crown, TrendingUp } from 'lucide-react'
+import { Home, Search, Shield, Crown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export const navLinks = [
   { href: '/imoveis', label: 'Buscar Imóveis', icon: Search },
   { href: '/imoveis?listingType=RENT', label: 'Alugar', icon: Home },
-  { href: '/avaliar', label: 'Avaliar Imóvel', icon: TrendingUp },
   { href: '/servicos', label: 'Serviços', icon: Shield },
   { href: '/planos', label: 'Planos', icon: Crown },
 ]

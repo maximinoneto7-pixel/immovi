@@ -14,13 +14,13 @@ export const metadata = {
 export default async function MercadoPage() {
   const session = await auth()
 
-  const [byCity, byType, byState, totals] = await Promise.all([
+  const [byCity, byType, byState, totals, urbanTotals, urbanAreaByCity] = await Promise.all([
     // Top 10 cidades por volume
     prisma.property.groupBy({
       by: ['city', 'state'],
       where: { status: 'ACTIVE' },
       _count: { _all: true },
-      _avg: { price: true, area: true },
+      _avg: { price: true },
       _min: { price: true },
       _max: { price: true },
       orderBy: { _count: { city: 'desc' } },
@@ -47,13 +47,24 @@ export default async function MercadoPage() {
     prisma.property.aggregate({
       where: { status: 'ACTIVE' },
       _count: { _all: true },
-      _avg: { price: true, area: true },
+      _avg: { price: true },
       _min: { price: true },
       _max: { price: true },
     }),
+    // Área média e preço/m² só com urbanos: uma fazenda de 500 ha (5 milhões de m²) distorceria tudo
+    prisma.property.aggregate({
+      where: { status: 'ACTIVE', type: { not: 'FARM' } },
+      _avg: { price: true, area: true },
+    }),
+    prisma.property.groupBy({
+      by: ['city', 'state'],
+      where: { status: 'ACTIVE', type: { not: 'FARM' } },
+      _avg: { area: true },
+    }),
   ])
 
-  const pricePerM2 = (totals._avg.price || 0) / (totals._avg.area || 1)
+  const pricePerM2 = (urbanTotals._avg.price || 0) / (urbanTotals._avg.area || 1)
+  const urbanAreaOf = new Map(urbanAreaByCity.map((c) => [`${c.city}|${c.state}`, c._avg.area]))
 
   return (
     <>
@@ -78,7 +89,7 @@ export default async function MercadoPage() {
               { label: 'Imóveis ativos', value: totals._count._all.toLocaleString('pt-BR'), icon: Home },
               { label: 'Preço médio', value: formatCurrency(totals._avg.price || 0), icon: TrendingUp },
               { label: 'Preço médio m²', value: formatCurrency(pricePerM2), icon: BarChart2 },
-              { label: 'Área média', value: `${Math.round(totals._avg.area || 0)} m²`, icon: MapPin },
+              { label: 'Área média', value: `${Math.round(urbanTotals._avg.area || 0)} m²`, icon: MapPin },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
                 <Icon className="w-6 h-6 text-indigo-500 mx-auto mb-2" />
@@ -121,7 +132,7 @@ export default async function MercadoPage() {
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-gray-900">{c._count._all}</td>
                       <td className="px-4 py-3 text-right text-gray-700">{c._avg.price ? formatCurrency(c._avg.price) : '—'}</td>
-                      <td className="px-4 py-3 text-right text-gray-700">{c._avg.area ? `${Math.round(c._avg.area)}m²` : '—'}</td>
+                      <td className="px-4 py-3 text-right text-gray-700">{urbanAreaOf.get(`${c.city}|${c.state}`) ? `${Math.round(urbanAreaOf.get(`${c.city}|${c.state}`)!)}m²` : '—'}</td>
                       <td className="px-4 py-3 text-right text-green-700 font-medium">{c._min.price ? formatCurrency(c._min.price) : '—'}</td>
                       <td className="px-4 py-3">
                         <Link href={`/imoveis?city=${c.city}&state=${c.state}`}

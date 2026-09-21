@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateContract, type ContractData, type Parte } from '@/lib/contract-templates'
 import { sendContractGeneratedEmail } from '@/lib/email'
+import { canCreateContracts, CONTRACTS_PAYWALL_MESSAGE } from '@/lib/subscription'
 
 function buildPartes(body: any, prefix: string): Parte[] {
   // Suporta tanto formato legado (sellerName, sellerCpf) quanto novo (parteA: [...])
@@ -27,15 +28,29 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Não autenticado.' }, { status: 401 })
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { planId: true, planExpiresAt: true, role: true },
+  })
+  if (!canCreateContracts(user)) {
+    return Response.json({ error: CONTRACTS_PAYWALL_MESSAGE }, { status: 403 })
+  }
+
   const body = await request.json()
 
-  const parteA = buildPartes(body, 'seller') || buildPartes(body, 'locador') ||
-                 buildPartes(body, 'permutanteA') || buildPartes(body, 'cedente') ||
-                 (body.parteA || [])
+  // `[]` é truthy: encadear com || nunca passaria do primeiro formato, então
+  // pega a primeira lista não vazia (formato atual do formulário primeiro)
+  const firstNonEmpty = (...lists: Parte[][]) => lists.find((l) => l.length) || []
 
-  const parteB = buildPartes(body, 'buyer') || buildPartes(body, 'locatario') ||
-                 buildPartes(body, 'permutanteB') || buildPartes(body, 'cessionario') ||
-                 (body.parteB || [])
+  const parteA = firstNonEmpty(
+    body.parteA || [], buildPartes(body, 'seller'), buildPartes(body, 'locador'),
+    buildPartes(body, 'permutanteA'), buildPartes(body, 'cedente'),
+  )
+
+  const parteB = firstNonEmpty(
+    body.parteB || [], buildPartes(body, 'buyer'), buildPartes(body, 'locatario'),
+    buildPartes(body, 'permutanteB'), buildPartes(body, 'cessionario'),
+  )
 
   if (!parteA.length || !parteB.length) {
     return Response.json({ error: 'Informe os dados das partes do contrato.' }, { status: 400 })

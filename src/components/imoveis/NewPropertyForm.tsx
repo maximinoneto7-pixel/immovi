@@ -3,7 +3,8 @@
 import { useState, useRef, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createPropertyAndReturn } from '@/app/actions/property'
-import { PROPERTY_TYPES, STATES } from '@/lib/utils'
+import { PROPERTY_TYPES, STATES, M2_PER_HECTARE, formatAlqueires, isRural } from '@/lib/utils'
+import { typeFields, RURAL_IMPROVEMENTS } from '@/lib/property-fields'
 import {
   AlertCircle, Info, Upload, X,
   Shield, CheckCircle2, Loader2, FileText,
@@ -28,6 +29,22 @@ export default function NewPropertyForm({ userId }: { userId: string }) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
   const [listingType, setListingType] = useState('SALE')
+
+  // Os campos de medida e cômodos mudam conforme o tipo (lib/property-fields)
+  const [propertyType, setPropertyType] = useState('HOUSE')
+  const [areaValue, setAreaValue] = useState('')
+  const fields = typeFields(propertyType)
+  const rural = isRural(propertyType)
+  const areaHectares = parseFloat(areaValue.replace(',', '.'))
+
+  const changeType = (next: string) => {
+    // Rural ↔ urbano muda a unidade da área e a lista de características
+    if (isRural(next) !== rural) {
+      setAreaValue('')
+      setSelectedFeatures([])
+    }
+    setPropertyType(next)
+  }
 
   // Fotos com upload real
   const [photos, setPhotos] = useState<UploadedPhoto[]>([])
@@ -80,9 +97,10 @@ export default function NewPropertyForm({ userId }: { userId: string }) {
     // Vídeo
     if (videoUrl) formData.set('videoUrl', videoUrl)
 
-    // Características (selecionadas + descritas em "Outros")
+    // Características ou benfeitorias (selecionadas na lista do tipo + descritas em "Outros")
     const customList = customFeatures.split('\n').map((f) => f.trim()).filter(Boolean)
-    formData.set('features', [...selectedFeatures, ...customList].join('\n'))
+    const presetList = rural ? RURAL_IMPROVEMENTS : PRESET_FEATURES
+    formData.set('features', [...selectedFeatures.filter((f) => presetList.includes(f)), ...customList].join('\n'))
 
     // Localização marcada no mapa (fallback: geocodificação automática no servidor)
     if (coords) {
@@ -185,7 +203,7 @@ export default function NewPropertyForm({ userId }: { userId: string }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Tipo de imóvel *</label>
-              <select name="type" required
+              <select name="type" required value={propertyType} onChange={(e) => changeType(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                 {Object.entries(PROPERTY_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
@@ -218,40 +236,70 @@ export default function NewPropertyForm({ userId }: { userId: string }) {
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Área total (m²) *</label>
-            <input type="number" name="area" required min={1} placeholder="Ex: 120"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { label: 'Quartos', name: 'bedrooms', max: 7 },
-              { label: 'Banheiros', name: 'bathrooms', max: 5 },
-              { label: 'Vagas', name: 'parkingSpaces', max: 5 },
-            ].map(({ label, name, max }) => (
-              <div key={name}>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
-                <select name={name} className="w-full px-3 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                  <option value="">-</option>
-                  {Array.from({ length: max }, (_, i) => i + (name === 'parkingSpaces' ? 0 : 1)).map((n) => (
-                    <option key={n} value={n}>{n === max ? `${n}+` : n}</option>
-                  ))}
-                </select>
+          <div className={cn('grid grid-cols-1 gap-4', fields.builtArea && 'sm:grid-cols-2')}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{fields.areaLabel} *</label>
+              <input type="number" name="area" required min={rural ? 0.01 : 1} step="any"
+                value={areaValue} onChange={(e) => setAreaValue(e.target.value)}
+                placeholder={rural ? 'Ex: 48,4' : 'Ex: 120'}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              {rural && areaHectares > 0 && (
+                <p className="text-xs text-indigo-700 font-medium mt-1.5">
+                  = {(areaHectares * M2_PER_HECTARE).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} m²
+                  {' · '}≈ {formatAlqueires(areaHectares * M2_PER_HECTARE)}
+                </p>
+              )}
+            </div>
+            {fields.builtArea && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Área construída (m²){fields.builtArea === 'required' && ' *'}
+                </label>
+                <input type="number" name="builtArea" required={fields.builtArea === 'required'} min={1} step="any"
+                  placeholder="Ex: 180"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
-            ))}
+            )}
           </div>
 
-          <div className="flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" name="furnished" value="true" className="w-4 h-4 accent-indigo-600" />
-              <span className="text-sm text-gray-700">Mobiliado</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" name="acceptsPets" value="true" className="w-4 h-4 accent-indigo-600" />
-              <span className="text-sm text-gray-700">Aceita pets</span>
-            </label>
-          </div>
+          {rural && (
+            <p className="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2.5">
+              Quartos e banheiros da casa sede podem ser descritos nas benfeitorias, na seção 3.
+            </p>
+          )}
+
+          {(fields.bedrooms || fields.bathroomsAndParking) && (
+            <div className={cn('grid gap-4', fields.bedrooms && fields.bathroomsAndParking ? 'grid-cols-3' : 'grid-cols-2')}>
+              {[
+                fields.bedrooms && { label: 'Quartos', name: 'bedrooms', max: 7 },
+                fields.bathroomsAndParking && { label: 'Banheiros', name: 'bathrooms', max: 5 },
+                fields.bathroomsAndParking && { label: 'Vagas', name: 'parkingSpaces', max: 5 },
+              ].filter((f): f is { label: string; name: string; max: number } => !!f).map(({ label, name, max }) => (
+                <div key={name}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+                  <select name={name} className="w-full px-3 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    <option value="">-</option>
+                    {Array.from({ length: max }, (_, i) => i + (name === 'parkingSpaces' ? 0 : 1)).map((n) => (
+                      <option key={n} value={n}>{n === max ? `${n}+` : n}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {fields.furnishedAndPets && (
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="furnished" value="true" className="w-4 h-4 accent-indigo-600" />
+                <span className="text-sm text-gray-700">Mobiliado</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="acceptsPets" value="true" className="w-4 h-4 accent-indigo-600" />
+                <span className="text-sm text-gray-700">Aceita pets</span>
+              </label>
+            </div>
+          )}
 
           {/* Condomínio e IPTU — apenas para aluguel */}
           {(listingType === 'RENT' || listingType === 'BOTH') && (
@@ -391,10 +439,14 @@ export default function NewPropertyForm({ userId }: { userId: string }) {
               className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-amber-50" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Características e diferenciais</label>
-            <p className="text-xs text-gray-400 mb-2">Selecione as que se aplicam</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              {rural ? 'Benfeitorias' : 'Características e diferenciais'}
+            </label>
+            <p className="text-xs text-gray-400 mb-2">
+              {rural ? 'Selecione as que existem na propriedade' : 'Selecione as que se aplicam'}
+            </p>
             <div className="flex flex-wrap gap-2 mb-4">
-              {PRESET_FEATURES.map((feature) => {
+              {(rural ? RURAL_IMPROVEMENTS : PRESET_FEATURES).map((feature) => {
                 const active = selectedFeatures.includes(feature)
                 return (
                   <button
@@ -415,13 +467,17 @@ export default function NewPropertyForm({ userId }: { userId: string }) {
                 )
               })}
             </div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Outros</label>
-            <p className="text-xs text-gray-400 mb-2">Não achou na lista? Descreva aqui, uma por linha</p>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              {rural ? 'Outras benfeitorias' : 'Outros'}
+            </label>
+            <p className="text-xs text-gray-400 mb-2">
+              {rural ? 'Detalhe ou acrescente benfeitorias, uma por linha' : 'Não achou na lista? Descreva aqui, uma por linha'}
+            </p>
             <textarea
               value={customFeatures}
               onChange={(e) => setCustomFeatures(e.target.value)}
               rows={3}
-              placeholder={"Ex: Vista para a serra\nQuadra de tênis"}
+              placeholder={rural ? 'Ex: Casa sede com 3 quartos e varanda\n2 represas com peixes' : 'Ex: Vista para a serra\nQuadra de tênis'}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
           </div>
         </div>

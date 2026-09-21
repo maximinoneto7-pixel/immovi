@@ -244,7 +244,7 @@ export default async function HomePage() {
             {[
               { step: '1', icon: Home, title: 'Anuncie ou Busque', desc: 'Cadastre seu imóvel com fotos e a história do lugar — ou busque o imóvel dos seus sonhos com filtros avançados.' },
               { step: '2', icon: MessageCircle, title: 'Conecte-se', desc: 'Entre em contato diretamente com o proprietário pelo chat seguro da plataforma. Tire dúvidas, agende visitas.' },
-              { step: '3', icon: Handshake, title: 'Feche com Segurança', desc: 'Use nossos serviços de contrato digital, vistoria e assessoria jurídica para fechar o negócio com total segurança.' },
+              { step: '3', icon: Handshake, title: 'Feche com Segurança', desc: 'Assinantes geram contratos de compra e venda, locação, permuta ou cessão de direitos, prontos para imprimir e assinar.' },
             ].map((item, i) => (
               <ScrollReveal key={item.step} delay={i * 100}>
                 <div className="text-center relative">

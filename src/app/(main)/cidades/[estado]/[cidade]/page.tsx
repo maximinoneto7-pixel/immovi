@@ -40,7 +40,7 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
   const cityName = slugToCity(cidade)
   const uf = estado.toUpperCase()
 
-  const [properties, stats, types] = await Promise.all([
+  const [properties, stats, types, urbanArea] = await Promise.all([
     prisma.property.findMany({
       where: {
         status: 'ACTIVE',
@@ -58,7 +58,7 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
     prisma.property.aggregate({
       where: { status: 'ACTIVE', state: uf, city: { contains: cityName } },
       _count: { _all: true },
-      _avg: { price: true, area: true },
+      _avg: { price: true },
       _min: { price: true },
       _max: { price: true },
     }),
@@ -68,6 +68,11 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
       _count: { _all: true },
       orderBy: { _count: { type: 'desc' } },
       take: 5,
+    }),
+    // Área média só com urbanos: uma fazenda em hectares distorceria a média da cidade
+    prisma.property.aggregate({
+      where: { status: 'ACTIVE', state: uf, city: { contains: cityName }, type: { not: 'FARM' } },
+      _avg: { area: true },
     }),
   ])
 
@@ -103,7 +108,7 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
                 { label: 'Imóveis', value: total.toString() },
                 { label: 'Preço médio', value: avgPrice > 0 ? formatCurrency(avgPrice) : '—' },
                 { label: 'A partir de', value: stats._min.price ? formatCurrency(stats._min.price) : '—' },
-                { label: 'Área média', value: stats._avg.area ? `${Math.round(stats._avg.area)}m²` : '—' },
+                { label: 'Área média', value: urbanArea._avg.area ? `${Math.round(urbanArea._avg.area)}m²` : '—' },
               ].map(s => (
                 <div key={s.label} className="bg-white/10 rounded-xl p-3 text-center">
                   <div className="text-xl font-bold">{s.value}</div>

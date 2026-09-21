@@ -63,16 +63,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/calculadora" className="hover:text-indigo-400 transition-colors">
-                  Calculadora de Custos
-                </Link>
-              </li>
-              <li>
-                <Link href="/avaliar" className="hover:text-indigo-400 transition-colors">
-                  Avaliar Meu Imóvel
-                </Link>
-              </li>
-              <li>
                 <Link href="/planos" className="hover:text-indigo-400 transition-colors">
                   Planos e Preços
                 </Link>

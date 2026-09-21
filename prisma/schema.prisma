@@ -103,7 +103,9 @@ model Property {
   listingType   String   @default("SALE")
   price         Float
   rentPrice     Float?
+  // Sempre em m² (imóvel rural é digitado e exibido em hectares)
   area          Float
+  builtArea     Float?
   bedrooms      Int?
   bathrooms     Int?
   parkingSpaces Int?

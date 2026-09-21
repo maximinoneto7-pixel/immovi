@@ -40,6 +40,7 @@ export const PLANOS = {
       '1 Foguete por mês',
       'Prioridade nos resultados',
       'Suporte por e-mail',
+      'Contratos digitais',
     ],
   },
   PROFISSIONAL: {
@@ -60,7 +61,7 @@ export const PLANOS = {
       '3 Foguetes por mês',
       'Relatório de visualizações',
       'Suporte prioritário',
-      'Contrato digital incluso',
+      'Contratos digitais',
     ],
   },
   IMOBILIARIA: {
@@ -82,6 +83,7 @@ export const PLANOS = {
       'Multi-usuários (até 10 corretores)',
       'API de integração',
       'Gerente de conta dedicado',
+      'Contratos digitais',
     ],
   },
 } as const

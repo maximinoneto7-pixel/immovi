@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Bell, BellOff, Trash2, ExternalLink, Clock, CheckCircle2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatArea } from '@/lib/utils'
 
 interface SavedSearch {
   id: string
@@ -22,15 +22,16 @@ const FILTER_LABELS: Record<string, string> = {
 
 const TYPE_LABELS: Record<string, string> = {
   HOUSE: 'Casa', APARTMENT: 'Apartamento', LAND: 'Terreno',
-  FARM: 'Fazenda', COMMERCIAL: 'Comercial',
+  FARM: 'Fazenda / Sítio / Chácara', COMMERCIAL: 'Comercial',
   SALE: 'Venda', RENT: 'Aluguel', BOTH: 'Venda e Aluguel',
 }
 
-function formatFilterValue(key: string, value: any): string {
+function formatFilterValue(key: string, value: any, propertyType?: string): string {
   if (key === 'minPrice' || key === 'maxPrice') {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value)
   }
-  if (key === 'minArea' || key === 'maxArea') return `${value}m²`
+  // A área da busca fica em m²; em buscas rurais aparece em hectares
+  if (key === 'minArea' || key === 'maxArea') return formatArea(Number(value), propertyType)
   if (key === 'bedrooms') return `${value}+`
   return TYPE_LABELS[value] || value
 }
@@ -132,7 +133,7 @@ export default function AlertsManager({ initialSearches }: { initialSearches: Sa
               <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-gray-100">
                 {activeFilters.map(([k, v]) => (
                   <span key={k} className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                    {FILTER_LABELS[k] || k}: <strong>{formatFilterValue(k, v)}</strong>
+                    {FILTER_LABELS[k] || k}: <strong>{formatFilterValue(k, v, search.filters.type)}</strong>
                   </span>
                 ))}
               </div>

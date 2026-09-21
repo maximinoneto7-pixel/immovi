@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Heart, Bed, Bath, Car, MapPin, Maximize2, Shield, Star, Scale } from 'lucide-react'
-import { formatCurrency, formatArea, PROPERTY_TYPES } from '@/lib/utils'
+import { formatCurrency, formatArea, formatAlqueires, isRural, mainArea, PROPERTY_TYPES } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { getCompareIds, toggleCompareId, COMPARE_EVENT, COMPARE_MAX } from '@/lib/compare'
 
@@ -16,6 +16,7 @@ interface PropertyCardProps {
     price: number
     rentPrice?: number | null
     area: number
+    builtArea?: number | null
     bedrooms?: number | null
     bathrooms?: number | null
     parkingSpaces?: number | null
@@ -201,8 +202,11 @@ export default function PropertyCard({
         <div className="flex items-center gap-3 text-xs text-gray-600 pb-3 border-b border-gray-100">
           <span className="flex items-center gap-1">
             <Maximize2 className="w-3.5 h-3.5 text-gray-400" />
-            {formatArea(property.area)}
+            {formatArea(mainArea(property), property.type)}
           </span>
+          {isRural(property.type) && (
+            <span className="text-gray-500">≈ {formatAlqueires(property.area, true)}</span>
+          )}
           {property.bedrooms != null && (
             <span className="flex items-center gap-1">
               <Bed className="w-3.5 h-3.5 text-gray-400" />

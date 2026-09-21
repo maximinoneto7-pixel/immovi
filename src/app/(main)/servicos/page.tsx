@@ -1,217 +1,147 @@
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { PLANOS, formatPrice } from '@/lib/stripe'
+import { canCreateContracts } from '@/lib/subscription'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import FinanciamentoSimulator from '@/components/servicos/FinanciamentoSimulator'
-import SolicitacaoForm from '@/components/servicos/SolicitacaoForm'
 import {
-  FileText, Shield, Wrench, Home, Scale, ChevronRight, CheckCircle2,
-  Calculator, Handshake,
+  FileText, KeyRound, Repeat, ArrowLeftRight, Landmark, Calculator,
+  Wrench, Shield, Scale, TrendingUp, ArrowRight, Lock,
 } from 'lucide-react'
+
+export const metadata = {
+  title: 'Contratos imobiliários digitais — Immovi',
+  description: 'Promessa de compra e venda, locação, permuta e cessão de direitos: contratos completos, prontos para imprimir e assinar.',
+}
+
+const MODELOS = [
+  { type: 'PROMESSA_COMPRA_VENDA', icon: FileText, title: 'Promessa de Compra e Venda', desc: 'Venda com sinal e prazo para a escritura' },
+  { type: 'LOCACAO', icon: KeyRound, title: 'Contrato de Locação', desc: 'Residencial ou comercial, pela Lei do Inquilinato (8.245/91)' },
+  { type: 'PERMUTA', icon: Repeat, title: 'Contrato de Permuta', desc: 'Troca de imóveis entre as partes, com ou sem torna' },
+  { type: 'CESSAO', icon: ArrowLeftRight, title: 'Cessão de Direitos', desc: 'Transferência de direitos sobre um imóvel' },
+]
+
+const PASSOS = ['Escolha o modelo', 'Preencha partes, imóvel e pagamento', 'Revise e salve em PDF para assinar']
+
+const EM_BREVE = [
+  { icon: Landmark, title: 'Simulação de Financiamento' },
+  { icon: Calculator, title: 'Calculadora de Custos' },
+  { icon: Wrench, title: 'Vistoria Profissional' },
+  { icon: Shield, title: 'Seguro Imobiliário' },
+  { icon: Scale, title: 'Assessoria Jurídica' },
+  { icon: TrendingUp, title: 'Avaliação de Imóvel' },
+]
 
 export default async function ServicosPage() {
   const session = await auth()
-
-  const services = [
-    {
-      id: 'financiamento',
-      icon: Calculator,
-      color: 'blue',
-      title: 'Simulação de Financiamento',
-      desc: 'Simule seu financiamento imobiliário em segundos. Veja parcelas, taxas e compare bancos parceiros.',
-      features: ['Simulação gratuita', 'Múltiplos bancos', 'Taxa personalizada', 'Resultado imediato'],
-      cta: 'Simular agora',
-      href: '/calculadora',
-      active: false,
-    },
-    {
-      id: 'contrato',
-      icon: FileText,
-      color: 'green',
-      title: 'Contrato Digital',
-      desc: 'Gere contratos de compra, venda e locação com validade jurídica, sem sair de casa.',
-      features: ['Validade jurídica', 'Modelos prontos', 'Cláusulas completas', 'Impressão em PDF'],
-      cta: 'Criar contrato',
-      href: '/contratos/novo',
-      active: true,
-    },
-    {
-      id: 'vistoria',
-      icon: Wrench,
-      color: 'amber',
-      title: 'Vistoria Profissional',
-      desc: 'Profissionais certificados vistoriam o imóvel e emitem laudo técnico completo.',
-      features: ['Profissional certificado', 'Laudo técnico', 'Agendamento online', 'Resultado em 48h'],
-      cta: 'Agendar vistoria',
-      href: '#',
-      active: false,
-    },
-    {
-      id: 'seguro',
-      icon: Shield,
-      color: 'violet',
-      title: 'Seguro Imobiliário',
-      desc: 'Proteção completa para seu imóvel. Incêndio, roubo, danos elétricos e muito mais.',
-      features: ['Múltiplas coberturas', 'Parceiros certificados', 'Contratação online', 'Assistência 24h'],
-      cta: 'Cotar seguro',
-      href: '#',
-      active: false,
-    },
-    {
-      id: 'juridico',
-      icon: Scale,
-      color: 'red',
-      title: 'Assessoria Jurídica',
-      desc: 'Advogados especializados em direito imobiliário para revisar contratos e orientar negociações.',
-      features: ['Advogado especialista', 'Revisão de contratos', 'Orientação jurídica', '1ª consulta grátis'],
-      cta: 'Falar com advogado',
-      href: '#',
-      active: false,
-    },
-    {
-      id: 'avaliacao',
-      icon: Home,
-      color: 'teal',
-      title: 'Avaliação de Imóvel',
-      desc: 'Descubra o valor justo de mercado do seu imóvel com uma avaliação técnica profissional.',
-      features: ['Avaliador credenciado', 'Laudo ABNT', 'Prazo de 5 dias', 'Para venda ou financiamento'],
-      cta: 'Solicitar avaliação',
-      href: '#',
-      active: false,
-    },
-  ]
-
-  const colorMap: Record<string, { bg: string; text: string; border: string; btn: string }> = {
-    blue: { bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100', btn: 'bg-indigo-600 hover:bg-indigo-700' },
-    green: { bg: 'bg-green-50', text: 'text-green-600', border: 'border-green-100', btn: 'bg-green-600 hover:bg-green-700' },
-    amber: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100', btn: 'bg-amber-500 hover:bg-amber-600' },
-    violet: { bg: 'bg-violet-50', text: 'text-violet-600', border: 'border-violet-100', btn: 'bg-violet-600 hover:bg-violet-700' },
-    red: { bg: 'bg-red-50', text: 'text-red-500', border: 'border-red-100', btn: 'bg-red-500 hover:bg-red-600' },
-    teal: { bg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-100', btn: 'bg-teal-600 hover:bg-teal-700' },
-  }
+  const user = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { planId: true, planExpiresAt: true, role: true },
+      })
+    : null
+  const canCreate = canCreateContracts(user)
 
   return (
     <>
       <Header user={session?.user as any} />
       <main className="flex-1">
-        {/* Hero */}
+        {/* Hero — contratos */}
         <section className="bg-gradient-to-br from-gray-900 to-indigo-900 text-white py-16">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-indigo-300 text-sm font-medium mb-4">
-              <Handshake className="w-4 h-4" />
-              Serviços integrados
+          <div className="max-w-3xl mx-auto px-4 text-center flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2 text-indigo-300 text-sm font-medium">
+              <FileText className="w-4 h-4" />
+              Contratos imobiliários
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-              Tudo que você precisa para fechar com segurança
-            </h1>
-            <p className="text-gray-300 text-lg max-w-2xl mx-auto">
-              Do financiamento à assinatura do contrato, temos parceiros especializados para cada etapa da sua negociação imobiliária.
+            <h1 className="text-3xl sm:text-4xl font-bold">Seu contrato imobiliário pronto em minutos</h1>
+            <p className="text-gray-300 text-lg max-w-2xl">
+              Modelos completos de compra e venda, locação, permuta e cessão de direitos. Preencha, revise e imprima para assinar.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 mt-2">
+              {canCreate ? (
+                <>
+                  <Link href="/contratos/novo" className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold text-sm transition-colors">
+                    Criar contrato <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link href="/contratos" className="px-6 py-3 border border-white/30 hover:bg-white/10 rounded-xl font-semibold text-sm transition-colors">
+                    Meus contratos
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/planos" className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold text-sm transition-colors">
+                    Assinar e criar contratos <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <a href="#modelos" className="px-6 py-3 border border-white/30 hover:bg-white/10 rounded-xl font-semibold text-sm transition-colors">
+                    Ver modelos
+                  </a>
+                </>
+              )}
+            </div>
+            <p className="text-xs text-gray-400">
+              {canCreate
+                ? 'Incluso no seu plano · Várias partes de cada lado · PDF para impressão'
+                : `Incluso em todos os planos pagos, a partir de ${formatPrice(PLANOS.DESTAQUE.preco)}/mês · Várias partes de cada lado · PDF para impressão`}
             </p>
           </div>
         </section>
 
-        {/* Simulador de Financiamento — em destaque */}
-        <section id="financiamento" className="bg-indigo-50 py-12">
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold mb-3">
-                <Calculator className="w-4 h-4" />
-                Simulação gratuita
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Simule seu Financiamento</h2>
-              <p className="text-gray-500">Descubra quanto vai pagar por mês e qual banco oferece as melhores condições</p>
-            </div>
-            <FinanciamentoSimulator />
-          </div>
-        </section>
-
-        {/* Service cards */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Nossos serviços</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((svc) => {
-              const c = colorMap[svc.color]
-              return (
-                <div
-                  key={svc.id}
-                  id={svc.id}
-                  className={`bg-white rounded-2xl border shadow-sm p-6 flex flex-col relative overflow-hidden transition-shadow ${
-                    svc.active ? 'border-gray-100 hover:shadow-md' : 'border-gray-100 opacity-80'
-                  }`}
-                >
-                  {/* Badge Em Breve */}
-                  {!svc.active && (
-                    <div className="absolute top-3 right-3 px-2.5 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-full tracking-wide">
-                      Em breve
-                    </div>
-                  )}
-
-                  {/* Badge Disponível */}
-                  {svc.active && (
-                    <div className="absolute top-3 right-3 px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full tracking-wide flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
-                      Disponível
-                    </div>
-                  )}
-
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${c.bg} ${c.text}`}>
-                    <svc.icon className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-gray-900 text-lg mb-2">{svc.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed mb-4">{svc.desc}</p>
-                  <ul className="space-y-2 mb-6 flex-1">
-                    {svc.features.map((f) => (
-                      <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
-                        <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${svc.active ? 'text-green-500' : 'text-gray-300'}`} />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {svc.active ? (
-                    <Link
-                      href={svc.href}
-                      className={`flex items-center justify-center gap-2 py-3 text-white font-semibold rounded-xl text-sm transition-colors ${c.btn}`}
-                    >
-                      {svc.cta}
-                      <ChevronRight className="w-4 h-4" />
-                    </Link>
+        {/* Modelos */}
+        <section id="modelos" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 scroll-mt-20">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Escolha o modelo</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {MODELOS.map((m) => (
+              <Link
+                key={m.type}
+                href={`/contratos/novo?type=${m.type}`}
+                className="group bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md hover:border-indigo-200 transition-all"
+              >
+                <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <m.icon className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-gray-900">{m.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed flex-1">{m.desc}</p>
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600">
+                  {canCreate ? (
+                    <>Começar <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" /></>
                   ) : (
-                    <div className="flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-400 font-semibold rounded-xl text-sm cursor-not-allowed select-none">
-                      <ChevronRight className="w-4 h-4" />
-                      Em breve
-                    </div>
+                    <><Lock className="w-3.5 h-3.5" /> Para assinantes</>
                   )}
-                </div>
-              )
-            })}
+                </span>
+              </Link>
+            ))}
           </div>
         </section>
 
-        {/* Formulário de solicitação */}
-        <section id="solicitar" className="bg-gradient-to-br from-indigo-50 to-indigo-100 py-14">
-          <div className="max-w-2xl mx-auto px-4">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Solicite um serviço</h2>
-              <p className="text-gray-500">
-                Preencha o formulário e um de nossos parceiros especializados entrará em contato em até 24h.
-              </p>
-            </div>
-            <SolicitacaoForm />
-          </div>
-        </section>
-
-        {/* Trust badges */}
-        <section className="bg-gray-50 py-10">
-          <div className="max-w-4xl mx-auto px-4 text-center">
-            <p className="text-gray-500 text-sm mb-6">Parceiros confiáveis e certificados</p>
-            <div className="flex flex-wrap items-center justify-center gap-8 text-gray-400 text-sm font-semibold">
-              {['Banco do Brasil', 'Caixa Econômica', 'Itaú', 'Bradesco', 'Santander'].map((bank) => (
-                <div key={bank} className="px-4 py-2 bg-white rounded-xl border border-gray-200 text-gray-600">
-                  {bank}
-                </div>
+        {/* Como funciona */}
+        <section className="bg-gray-50 py-12">
+          <div className="max-w-4xl mx-auto px-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-8 text-center">Como funciona</h2>
+            <ol className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {PASSOS.map((passo, i) => (
+                <li key={passo} className="flex items-center gap-3">
+                  <span className="w-9 h-9 flex-shrink-0 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                  <span className="font-semibold text-gray-800 text-sm">{passo}</span>
+                </li>
               ))}
-            </div>
+            </ol>
+          </div>
+        </section>
+
+        {/* Em breve */}
+        <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+          <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">Outros serviços, em breve</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {EM_BREVE.map((s) => (
+              <div key={s.title} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed border-gray-200 bg-white text-gray-500">
+                <s.icon className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                <span className="text-sm flex-1">{s.title}</span>
+                <span className="px-2.5 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-full">Em breve</span>
+              </div>
+            ))}
           </div>
         </section>
       </main>

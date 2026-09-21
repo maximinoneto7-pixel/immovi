@@ -173,6 +173,7 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
                 { label: 'Destaques', fn: (p: typeof plans[PlanoId]) => String(p.destaques) },
                 { label: 'Foguetes/mês', fn: (p: typeof plans[PlanoId]) => String(p.foguetes) },
                 { label: 'Badge verificado', fn: (p: typeof plans[PlanoId]) => p.verificacao ? '✓' : '—' },
+                { label: 'Contratos digitais', fn: (p: typeof plans[PlanoId]) => p.preco > 0 ? '✓' : '—' },
               ].map((row) => (
                 <tr key={row.label} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
                   <td className="px-6 py-3.5 text-gray-700 font-medium">{row.label}</td>

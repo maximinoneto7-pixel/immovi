@@ -2,6 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { parseTypedFields } from '@/lib/property-fields'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { notifyMatchingAlerts } from '@/lib/alerts'
@@ -41,12 +42,9 @@ export async function createProperty(formData: FormData) {
   const listingType = formData.get('listingType') as string
   const price = parseFloat(formData.get('price') as string)
   const rentPrice = formData.get('rentPrice') ? parseFloat(formData.get('rentPrice') as string) : null
-  const area = parseFloat(formData.get('area') as string)
-  const bedrooms = formData.get('bedrooms') ? parseInt(formData.get('bedrooms') as string) : null
-  const bathrooms = formData.get('bathrooms') ? parseInt(formData.get('bathrooms') as string) : null
-  const parkingSpaces = formData.get('parkingSpaces') ? parseInt(formData.get('parkingSpaces') as string) : null
-  const furnished = formData.get('furnished') === 'true'
-  const acceptsPets = formData.get('acceptsPets') === 'true'
+  const {
+    area, builtArea, bedrooms, bathrooms, parkingSpaces, furnished, acceptsPets, missingBuiltArea,
+  } = parseTypedFields(formData, type)
   const address = formData.get('address') as string
   const city = formData.get('city') as string
   const state = formData.get('state') as string
@@ -63,6 +61,7 @@ export async function createProperty(formData: FormData) {
   if (!title || !description || !type || !listingType || !price || !area || !address || !city || !state) {
     return { error: 'Preencha todos os campos obrigatórios.' }
   }
+  if (missingBuiltArea) return { error: 'Informe a área construída da casa.' }
 
   const property = await prisma.property.create({
     data: {
@@ -74,6 +73,7 @@ export async function createProperty(formData: FormData) {
       price,
       rentPrice,
       area,
+      builtArea,
       bedrooms,
       bathrooms,
       parkingSpaces,
@@ -134,12 +134,9 @@ export async function createPropertyAndReturn(formData: FormData) {
   const listingType = formData.get('listingType') as string
   const price = parseFloat(formData.get('price') as string)
   const rentPrice = formData.get('rentPrice') ? parseFloat(formData.get('rentPrice') as string) : null
-  const area = parseFloat(formData.get('area') as string)
-  const bedrooms = formData.get('bedrooms') ? parseInt(formData.get('bedrooms') as string) : null
-  const bathrooms = formData.get('bathrooms') ? parseInt(formData.get('bathrooms') as string) : null
-  const parkingSpaces = formData.get('parkingSpaces') ? parseInt(formData.get('parkingSpaces') as string) : null
-  const furnished = formData.get('furnished') === 'true'
-  const acceptsPets = formData.get('acceptsPets') === 'true'
+  const {
+    area, builtArea, bedrooms, bathrooms, parkingSpaces, furnished, acceptsPets, missingBuiltArea,
+  } = parseTypedFields(formData, type)
   const address = formData.get('address') as string
   const city = formData.get('city') as string
   const state = formData.get('state') as string
@@ -156,11 +153,12 @@ export async function createPropertyAndReturn(formData: FormData) {
   if (!title || !description || !type || !listingType || !price || !area || !address || !city || !state) {
     return { error: 'Preencha todos os campos obrigatórios.' }
   }
+  if (missingBuiltArea) return { error: 'Informe a área construída da casa.' }
 
   const property = await prisma.property.create({
     data: {
       title, description, story: story || null, type, listingType,
-      price, rentPrice, area, bedrooms, bathrooms, parkingSpaces,
+      price, rentPrice, area, builtArea, bedrooms, bathrooms, parkingSpaces,
       furnished, acceptsPets, condoFee, condoFeeBy, iptu, iptuBy, videoUrl,
       address, city, state,
       neighborhood: neighborhood || null, zipCode: zipCode || null,

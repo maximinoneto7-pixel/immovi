@@ -14,8 +14,31 @@ export function formatCurrency(value: number): string {
   }).format(value)
 }
 
-export function formatArea(area: number): string {
-  return `${area.toLocaleString('pt-BR')} m²`
+// A área é sempre guardada em m²; imóvel rural é digitado e exibido em hectares
+export const M2_PER_HECTARE = 10_000
+export const M2_PER_ALQUEIRE_GOIANO = 48_400
+
+export function isRural(type?: string | null): boolean {
+  return type === 'FARM'
+}
+
+export function formatArea(area: number, type?: string | null): string {
+  if (isRural(type)) {
+    return `${(area / M2_PER_HECTARE).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} ha`
+  }
+  return `${area.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} m²`
+}
+
+export function formatAlqueires(area: number, short = false): string {
+  const alqueires = area / M2_PER_ALQUEIRE_GOIANO
+  const value = alqueires.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+  if (short) return `${value} alq.`
+  return `${value} ${alqueires >= 2 ? 'alqueires goianos' : 'alqueire goiano'}`
+}
+
+/** Área que o card mostra: construída na casa (quando houver), a total nos demais */
+export function mainArea(property: { area: number; builtArea?: number | null; type?: string | null }): number {
+  return property.type === 'HOUSE' && property.builtArea ? property.builtArea : property.area
 }
 
 export function formatDate(date: Date | string): string {
@@ -41,7 +64,7 @@ export const PROPERTY_TYPES: Record<string, string> = {
   HOUSE: 'Casa',
   APARTMENT: 'Apartamento',
   LAND: 'Terreno',
-  FARM: 'Fazenda / Sítio',
+  FARM: 'Fazenda / Sítio / Chácara',
   COMMERCIAL: 'Comercial',
   OTHER: 'Outro',
 }
