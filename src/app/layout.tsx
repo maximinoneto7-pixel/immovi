@@ -1,5 +1,5 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { Geist, Geist_Mono, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 
 const geistSans = Geist({
@@ -10,6 +10,13 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+})
+
+// Só o peso do logotipo (componente Logo)
+const jakarta = Plus_Jakarta_Sans({
+  variable: '--font-jakarta',
+  subsets: ['latin'],
+  weight: '800',
 })
 
 export const metadata: Metadata = {
@@ -23,14 +30,18 @@ export const metadata: Metadata = {
   other: { 'mobile-web-app-capable': 'yes' },
 }
 
+export const viewport: Viewport = {
+  themeColor: '#4f46e5',
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#f7f9fc] text-[#1a202c]">
+    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} ${jakarta.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
       </body>
     </html>

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { registerUser } from '@/app/actions/auth'
 import OAuthButtons from '@/components/common/OAuthButtons'
+import Logo from '@/components/common/Logo'
 import { cn } from '@/lib/utils'
 
 type ProfileType = 'BUYER' | 'SELLER' | 'AGENT'
@@ -62,12 +63,7 @@ export default function CadastroPage() {
       {/* Painel esquerdo */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-700 text-white flex-col items-center justify-center p-12 relative overflow-hidden">
         <div className="relative text-center max-w-sm">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-              <Home className="w-7 h-7" />
-            </div>
-            <span className="text-2xl font-bold">Immovi</span>
-          </div>
+          <Logo tone="brand" size="lg" className="justify-center mb-8" />
           <h2 className="text-3xl font-bold mb-4">
             {step === 'choose' ? 'Qual é o seu perfil?' : `Cadastro de ${selectedProfile.label}`}
           </h2>
@@ -91,17 +87,10 @@ export default function CadastroPage() {
       </div>
 
       {/* Painel direito */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-[#f7f9fc] overflow-y-auto">
+      <div className="flex-1 flex items-center justify-center p-6 bg-background overflow-y-auto">
         <div className="w-full max-w-md py-8">
           {/* Logo mobile */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center">
-              <Home className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-xl text-gray-900">
-              Immo<span className="text-indigo-600">vi</span>
-            </span>
-          </div>
+          <Logo className="lg:hidden mb-8" />
 
           {step === 'choose' ? (
             /* STEP 1: Escolha de perfil */

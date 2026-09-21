@@ -1,14 +1,64 @@
 @import "tailwindcss";
 
+/*
+ * Paleta Immovi
+ *
+ * O Tailwind v4 trocou as escalas por versões OKLCH mais saturadas — o
+ * indigo-600 dele (~#4f39f6) é bem mais "neon" que o #4f46e5 do logo, do
+ * favicon e do manifest. Aqui a escala indigo é recalibrada para o tom da
+ * marca (600 = #4f46e5), a violeta acompanha (é a mesma usada nos pinos do
+ * mapa) e os cinzas ganham um leve toque índigo para conversar com a marca.
+ * Como o site usa as classes do Tailwind direto (bg-indigo-600, text-gray-500…),
+ * mudar aqui atualiza tudo de uma vez.
+ */
+@theme {
+  --color-indigo-50: #eef2ff;
+  --color-indigo-100: #e0e7ff;
+  --color-indigo-200: #c7d2fe;
+  --color-indigo-300: #a5b4fc;
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #4f46e5;
+  --color-indigo-700: #4338ca;
+  --color-indigo-800: #3730a3;
+  --color-indigo-900: #312e81;
+  --color-indigo-950: #1e1b4b;
+
+  --color-violet-50: #f5f3ff;
+  --color-violet-100: #ede9fe;
+  --color-violet-200: #ddd6fe;
+  --color-violet-300: #c4b5fd;
+  --color-violet-400: #a78bfa;
+  --color-violet-500: #8b5cf6;
+  --color-violet-600: #7c3aed;
+  --color-violet-700: #6d28d9;
+  --color-violet-800: #5b21b6;
+  --color-violet-900: #4c1d95;
+  --color-violet-950: #2e1065;
+
+  /* Mesma luminosidade dos cinzas do Tailwind (contraste preservado), matiz puxado para o índigo */
+  --color-gray-50: oklch(98.5% 0.003 272);
+  --color-gray-100: oklch(96.7% 0.005 272);
+  --color-gray-200: oklch(92.8% 0.008 272);
+  --color-gray-300: oklch(87.2% 0.012 272);
+  --color-gray-400: oklch(70.7% 0.022 272);
+  --color-gray-500: oklch(55.1% 0.027 272);
+  --color-gray-600: oklch(44.6% 0.03 272);
+  --color-gray-700: oklch(37.3% 0.034 272);
+  --color-gray-800: oklch(27.8% 0.033 272);
+  --color-gray-900: oklch(21% 0.034 272);
+  --color-gray-950: oklch(13% 0.028 272);
+}
+
 :root {
   --background: #f7f9fc;
-  --foreground: #1a202c;
-  --primary: #4f46e5;
-  --primary-dark: #4338ca;
+  --foreground: var(--color-gray-900);
+  --primary: var(--color-indigo-600);
+  --primary-dark: var(--color-indigo-700);
   --secondary: #0e9f6e;
   --surface: #ffffff;
-  --border: #e2e8f0;
-  --muted: #718096;
+  --border: var(--color-gray-200);
+  --muted: var(--color-gray-500);
   --radius: 0.5rem;
 }
 
@@ -22,21 +72,43 @@
   --color-muted: var(--muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-brand: var(--font-jakarta);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/*
+ * Tudo que é padrão global fica em @layer base. Regras fora de camada vencem
+ * qualquer utilitário do Tailwind — a antiga `* { border-color }` solta anulava
+ * todas as classes border-indigo-*, border-red-* etc. do site.
+ */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
 
-* {
-  border-color: var(--border);
-}
+  html {
+    scroll-behavior: smooth;
+    accent-color: var(--color-indigo-600);
+  }
 
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  ::selection {
+    background: var(--color-indigo-100);
+    color: var(--color-indigo-900);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-indigo-500);
+    outline-offset: 2px;
+  }
 }
 
 /* Custom scrollbar */
@@ -44,14 +116,14 @@ html {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--color-gray-100);
 }
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--color-gray-300);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--color-gray-400);
 }
 
 /* Line clamp utilities */

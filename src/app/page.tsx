@@ -126,7 +126,7 @@ export default async function HomePage() {
           {/* Curva de transição suave para a próxima seção */}
           <div className="absolute bottom-0 left-0 right-0 leading-none pointer-events-none">
             <svg viewBox="0 0 1440 80" className="w-full h-14 sm:h-20" preserveAspectRatio="none">
-              <path d="M0,32 C480,80 960,0 1440,40 L1440,80 L0,80 Z" fill="#f7f9fc" />
+              <path d="M0,32 C480,80 960,0 1440,40 L1440,80 L0,80 Z" className="fill-background" />
             </svg>
           </div>
         </section>

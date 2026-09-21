@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Home, Phone, Mail, MapPin, Shield, Heart } from 'lucide-react'
+import { Phone, Mail, MapPin, Shield, Heart } from 'lucide-react'
+import { LogoMark, Wordmark } from '@/components/common/Logo'
 
 export default function Footer() {
   const ano = new Date().getFullYear()
@@ -15,14 +16,10 @@ export default function Footer() {
           <div>
             {/* Logo */}
             <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Home className="w-5 h-5 text-white" />
-              </div>
+              <LogoMark tone="dark" className="w-10 h-10" />
               <div>
-                <div className="font-bold text-white text-lg leading-tight">
-                  Immo<span className="text-indigo-400">vi</span>
-                </div>
-                <div className="text-xs text-gray-500 leading-tight">Marketplace imobiliário</div>
+                <Wordmark tone="dark" className="block text-[1.375rem]" />
+                <div className="text-xs text-gray-500 leading-tight mt-1">Marketplace imobiliário</div>
               </div>
             </div>
 
