@@ -97,6 +97,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (existing) {
           token.id = existing.id
           token.role = existing.role
+          // O próprio Google/Apple confirma o endereço: a conta não precisa do link
+          if (!existing.emailVerified) {
+            await prisma.user.update({ where: { id: existing.id }, data: { emailVerified: new Date() } })
+          }
         } else if (token.email) {
           const newUser = await prisma.user.create({
             data: {
@@ -104,6 +108,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: token.email,
               image: token.picture as string | undefined,
               role: 'BUYER',
+              emailVerified: new Date(),
             },
           })
           token.id = newUser.id

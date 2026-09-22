@@ -7,6 +7,9 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { notifyMatchingAlerts } from '@/lib/alerts'
 import { listingLimitError } from '@/lib/subscription'
+import { notifyPriceDrop, shownPrice } from '@/lib/price-alerts'
+import { emailGateOpen, UNVERIFIED_PUBLISH_ERROR } from '@/lib/email-verification'
+import { after } from 'next/server'
 
 // Geocodifica endereço via Nominatim (OpenStreetMap)
 async function geocode(address: string, city: string, state: string) {
@@ -96,6 +99,9 @@ async function createFromForm(formData: FormData) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Não autenticado.' } as const
 
+  // Sem e-mail confirmado, ninguém publica em nome de outra pessoa
+  if (!(await emailGateOpen(session.user.id))) return { error: UNVERIFIED_PUBLISH_ERROR } as const
+
   const { data, images, features, error } = readPropertyForm(formData)
   if (error) return { error } as const
 
@@ -142,6 +148,8 @@ async function getManageableProperty(propertyId: string) {
     select: {
       id: true, ownerId: true, status: true, address: true, city: true, state: true,
       latitude: true, longitude: true, verified: true,
+      // Preço de antes, para avisar quem favoritou quando cair
+      listingType: true, price: true, rentPrice: true,
     },
   })
   if (!property || property.status === 'DELETED') return { error: 'Anúncio não encontrado.' } as const
@@ -182,7 +190,10 @@ export async function updateProperty(propertyId: string, formData: FormData) {
     lng = property.longitude
   }
 
-  await prisma.property.update({
+  // Preço que o anúncio mostra, antes e depois, para avisar quem favoritou se caiu
+  const priceBefore = shownPrice(property)
+
+  const updated = await prisma.property.update({
     where: { id: propertyId },
     data: {
       ...data,
@@ -194,6 +205,11 @@ export async function updateProperty(propertyId: string, formData: FormData) {
       features: { deleteMany: {}, create: features.map((name) => ({ name })) },
     },
   })
+
+  const priceAfter = shownPrice(updated)
+  if (priceAfter < priceBefore) {
+    after(() => notifyPriceDrop(propertyId, priceBefore, priceAfter).catch(console.error))
+  }
 
   revalidateProperty(propertyId)
   return { propertyId, verificationRemoved: addressChanged && property.verified }

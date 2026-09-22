@@ -4,6 +4,7 @@ import { after } from 'next/server'
 import { sendNewMessageEmail, sendPropertyInterestEmail } from '@/lib/email'
 import { sendPushToUser } from '@/lib/push'
 import { touchPresence } from '@/lib/presence'
+import { emailGateOpen, UNVERIFIED_MESSAGE_ERROR } from '@/lib/email-verification'
 import { isOnline } from '@/lib/presence-labels'
 
 // Padrões que indicam tentativa de compartilhar telefone fora da plataforma
@@ -36,6 +37,11 @@ export async function POST(request: Request) {
   const session = await auth()
   if (!session?.user?.id) {
     return Response.json({ error: 'Não autenticado.' }, { status: 401 })
+  }
+
+  // Sem e-mail confirmado, ninguém conversa em nome de outra pessoa
+  if (!(await emailGateOpen(session.user.id))) {
+    return Response.json({ error: UNVERIFIED_MESSAGE_ERROR }, { status: 403 })
   }
 
   const body = await request.json()

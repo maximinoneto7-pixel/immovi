@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono, Plus_Jakarta_Sans } from 'next/font/google'
+import { SITE_URL } from '@/lib/site'
 import './globals.css'
 
 const geistSans = Geist({
@@ -20,6 +21,8 @@ const jakarta = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
+  // Base para os links absolutos das prévias de compartilhamento (og:image, canonical)
+  metadataBase: new URL(SITE_URL),
   title: 'Immovi — Compre, venda e alugue com confiança',
   description:
     'Plataforma imobiliária humana e segura. Conectamos compradores e vendedores diretamente, com histórias reais, perfis verificados e negociações transparentes.',

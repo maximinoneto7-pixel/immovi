@@ -16,13 +16,56 @@ import { getVideoEmbedUrl } from '@/lib/video'
 import {
   Bed, Bath, Car, Maximize2, MapPin, Shield, Star, Phone,
   MessageCircle, Heart, Calendar, Eye, CheckCircle2, Pause,
-  Home, BookOpen, Leaf, Users, Video, ExternalLink, BadgeCheck,
+  Home, BookOpen, Leaf, Users, Video, ExternalLink, BadgeCheck, Clock,
 } from 'lucide-react'
-import { formatCurrency, formatArea, formatAlqueires, formatDate, isRural, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
+import { formatCurrency, formatArea, formatAlqueires, formatDate, isRural, mainArea, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
 import { typeFields } from '@/lib/property-fields'
 import { activityLabel, isOnline } from '@/lib/presence-labels'
+import { responseSpeedFor, responseLabel } from '@/lib/response-time'
 import { COMPANY } from '@/lib/company'
 import { LogoMark } from '@/components/common/Logo'
+import type { Metadata } from 'next'
+
+// Título e texto que aparecem quando alguém compartilha o link (a imagem vem de opengraph-image.tsx)
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const property = await prisma.property.findUnique({
+    where: { id },
+    select: {
+      title: true, price: true, rentPrice: true, listingType: true, type: true,
+      area: true, builtArea: true, city: true, state: true, status: true, bedrooms: true, bathrooms: true,
+    },
+  })
+
+  if (!property || property.status === 'DELETED') {
+    return { title: 'Anúncio não encontrado | Immovi' }
+  }
+
+  const price = property.listingType === 'RENT' ? property.rentPrice : property.price
+  const priceLabel = `${formatCurrency(price || 0)}${property.listingType === 'RENT' ? '/mês' : ''}`
+  const area = mainArea(property)
+  const parts = [
+    PROPERTY_TYPES[property.type] || property.type,
+    area ? formatArea(area, property.type) : null,
+    property.bedrooms ? `${property.bedrooms} quarto${property.bedrooms > 1 ? 's' : ''}` : null,
+    `${property.city} – ${property.state}`,
+  ].filter(Boolean)
+
+  const title = `${property.title} — ${priceLabel}`
+  const description = `${parts.join(' · ')}. Fale direto com o anunciante pela Immovi, sem comissão obrigatória.`
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/imoveis/${id}` },
+    openGraph: { title, description, type: 'website', url: `/imoveis/${id}`, siteName: 'Immovi', locale: 'pt_BR' },
+    twitter: { card: 'summary_large_image', title, description },
+  }
+}
 
 export default async function PropertyDetailPage({
   params,
@@ -66,6 +109,9 @@ export default async function PropertyDetailPage({
   // Atividade aproximada do anunciante ("Ativo hoje"), nunca o horário exato; respeita a privacidade dele
   const ownerActivity = property.owner.showActivity ? activityLabel(property.owner.lastSeenAt) : null
   const ownerOnline = !!ownerActivity && isOnline(property.owner.lastSeenAt)
+
+  // "Costuma responder em até 1 hora": só aparece com conversas suficientes
+  const ownerResponse = responseLabel(await responseSpeedFor(property.owner))
 
   const isOwner = session?.user?.id === property.ownerId
   const canManage = isOwner || session?.user?.role === 'ADMIN'
@@ -560,7 +606,14 @@ export default async function PropertyDetailPage({
                       )}
                     </div>
                   </div>
-  
+
+                  {ownerResponse && (
+                    <div className="inline-flex items-center gap-1.5 mb-4 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-green-700 text-xs font-semibold">
+                      <Clock className="w-3.5 h-3.5" />
+                      {ownerResponse}
+                    </div>
+                  )}
+
                   {property.owner.bio && (
                     <p className="text-sm text-gray-600 leading-relaxed mb-4 italic">"{property.owner.bio}"</p>
                   )}

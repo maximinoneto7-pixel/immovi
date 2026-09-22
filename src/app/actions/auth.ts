@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { redirect } from 'next/navigation'
-import { sendWelcomeEmail } from '@/lib/email'
+import { sendVerificationLink } from '@/lib/email-verification'
 
 export async function registerUser(formData: FormData) {
   const name = formData.get('name') as string
@@ -56,7 +56,7 @@ export async function registerUser(formData: FormData) {
 
   const hashedPassword = await bcrypt.hash(password, 12)
 
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       name,
       email,
@@ -70,8 +70,23 @@ export async function registerUser(formData: FormData) {
     },
   })
 
-  // E-mail de boas-vindas (não bloqueia o redirect)
-  sendWelcomeEmail(email, name, role).catch(console.error)
+  // Link de confirmação do e-mail (as boas-vindas vêm depois de confirmar)
+  await sendVerificationLink(user).catch(console.error)
 
-  redirect('/login?registered=true')
+  redirect(`/confirmar-email?email=${encodeURIComponent(user.email)}`)
+}
+
+/** Reenvia o link de confirmação. Responde igual mesmo se o e-mail não existir. */
+export async function resendVerification(email: string) {
+  const address = (email || '').trim().toLowerCase()
+  if (!address) return { error: 'Informe seu e-mail.' }
+
+  const user = await prisma.user.findUnique({
+    where: { email: address },
+    select: { email: true, name: true, emailVerified: true },
+  })
+  if (user && !user.emailVerified) {
+    await sendVerificationLink(user).catch(console.error)
+  }
+  return { success: true }
 }

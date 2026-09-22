@@ -23,6 +23,7 @@ interface EditProfileFormProps {
     agencyName: string | null
     agencyPhone: string | null
     showActivity: boolean
+    priceAlerts: boolean
   }
 }
 
@@ -116,6 +117,21 @@ export default function EditProfileForm({ user }: EditProfileFormProps) {
             <span className="block text-sm font-medium text-gray-800">Mostrar quando estou online e quando vi as mensagens</span>
             <span className="block text-xs text-gray-500 mt-0.5">
               Se desligar, os outros não veem seu “online agora”, “visto por último” nem “visualizada”, e você também deixa de ver o deles.
+            </span>
+          </span>
+        </label>
+      </div>
+
+      {/* Avisos por e-mail e no celular */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
+        <h2 className="font-bold text-gray-900 text-lg border-b border-gray-100 pb-3">Avisos</h2>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" name="priceAlerts" value="true" defaultChecked={user.priceAlerts}
+            className="w-4 h-4 mt-0.5 accent-indigo-600" />
+          <span>
+            <span className="block text-sm font-medium text-gray-800">Avisar quando baixar o preço de um imóvel que favoritei</span>
+            <span className="block text-xs text-gray-500 mt-0.5">
+              Você recebe por e-mail e, se tiver autorizado, também no celular. No máximo um aviso por imóvel por semana.
             </span>
           </span>
         </label>

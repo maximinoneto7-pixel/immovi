@@ -43,6 +43,8 @@ model User {
   showActivity  Boolean   @default(true)
   // Conta da própria Immovi: anúncios aparecem como "Oficial Immovi" (só o admin liga)
   official      Boolean   @default(false)
+  // Avisos de baixa de preço nos imóveis favoritados (e-mail e notificação no celular)
+  priceAlerts   Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -132,6 +134,8 @@ model Property {
   verified      Boolean  @default(false)
   views         Int      @default(0)
   videoUrl      String?
+  // Último aviso de baixa de preço enviado a quem favoritou (no máximo um por semana)
+  priceAlertAt  DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

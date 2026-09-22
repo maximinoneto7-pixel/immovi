@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils'
 import NavLinks from './NavLinks'
 import Logo from '@/components/common/Logo'
+import ResendVerification from '@/components/auth/ResendVerification'
 
 interface HeaderProps {
   user?: {
@@ -27,6 +28,7 @@ export default function Header({ user }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [unread, setUnread] = useState(0)
+  const [emailConfirmed, setEmailConfirmed] = useState(true)
 
   // Sinal de "online" + conversas com mensagem nova: a cada troca de página,
   // a cada minuto com a aba visível e quando a aba volta a ficar visível
@@ -38,7 +40,11 @@ export default function Header({ user }: HeaderProps) {
       if (document.visibilityState !== 'visible') return
       fetch('/api/presenca', { method: 'POST', cache: 'no-store' })
         .then((r) => (r.ok ? r.json() : null))
-        .then((d) => { if (alive && d) setUnread(d.unread) })
+        .then((d) => {
+          if (!alive || !d) return
+          setUnread(d.unread)
+          setEmailConfirmed(d.emailConfirmed !== false)
+        })
         .catch(() => {})
     }
     ping()
@@ -53,6 +59,16 @@ export default function Header({ user }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      {/* Conta sem e-mail confirmado: avisa sem travar a navegação */}
+      {user && !emailConfirmed && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm text-amber-900">
+            <Bell className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1 min-w-[12rem]">Confirme seu e-mail para garantir que ninguém use seu endereço na Immovi.</span>
+            <ResendVerification email={user.email} compact />
+          </div>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

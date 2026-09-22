@@ -540,3 +540,63 @@ export async function sendValuationLeadEmail(lead: {
 
   return send(adminTo, `💰 Novo lead de avaliação — ${lead.name}`, html)
 }
+
+// ─── 13. Baixa de preço em imóvel favoritado ──────────────────────────────────
+
+export async function sendPriceDropEmail(
+  to: string,
+  userName: string,
+  property: { id: string; title: string; city: string; state: string; image?: string | null },
+  oldPrice: number,
+  newPrice: number
+) {
+  const money = (p: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(p)
+  const off = Math.round(((oldPrice - newPrice) / oldPrice) * 100)
+
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${userName}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 6px;">Baixou de preço um imóvel que você favoritou</h1>
+
+    ${property.image ? `<img src="${property.image}" alt="${property.title}" style="width:100%;max-width:536px;height:auto;border-radius:12px;display:block;margin:16px 0;"/>` : ''}
+
+    <div style="font-size:17px;font-weight:700;color:#111827;margin:0 0 4px;">${property.title}</div>
+    <div style="font-size:13px;color:#6b7280;margin:0 0 12px;">${property.city} – ${property.state}</div>
+
+    <div style="margin:0 0 4px;">
+      <span style="font-size:15px;color:#9ca3af;text-decoration:line-through;">${money(oldPrice)}</span>
+      <span style="font-size:24px;font-weight:800;color:#15803d;margin-left:10px;">${money(newPrice)}</span>
+      ${off >= 1 ? `<span style="font-size:12px;font-weight:700;color:#15803d;background:#e6f5ea;border-radius:6px;padding:3px 8px;margin-left:8px;">−${off}%</span>` : ''}
+    </div>
+
+    ${btn(`${BASE_URL}/imoveis/${property.id}`, 'Ver o anúncio')}
+
+    <p style="color:#9ca3af;font-size:11px;text-align:center;margin:8px 0 0;">
+      Você recebe porque favoritou este imóvel.
+      <a href="${BASE_URL}/perfil/editar" style="color:#6b7280;">Parar de receber avisos de preço</a>.
+    </p>
+  `, `De ${money(oldPrice)} por ${money(newPrice)}`)
+
+  return send(to, `Baixou de preço: ${property.title}`, html)
+}
+
+// ─── 14. Confirmação de e-mail no cadastro ────────────────────────────────────
+
+export async function sendEmailConfirmationEmail(to: string, name: string, confirmUrl: string) {
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 10px;">Confirme seu e-mail</h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">
+      É um toque para liberar a publicação de anúncios e as conversas na Immovi.
+    </p>
+
+    ${btn(confirmUrl, 'Confirmar meu e-mail')}
+
+    <p style="color:#9ca3af;font-size:12px;margin:0 0 4px;">O link vale por 24 horas.</p>
+    <p style="color:#9ca3af;font-size:12px;margin:0;">
+      Se não foi você quem criou a conta, ignore esta mensagem: sem a confirmação, nada é publicado em seu nome.
+    </p>
+  `, 'Confirme seu e-mail na Immovi')
+
+  return send(to, 'Confirme seu e-mail na Immovi', html)
+}

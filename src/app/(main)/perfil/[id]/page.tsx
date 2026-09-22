@@ -5,8 +5,9 @@ import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/imoveis/PropertyCard'
-import { Shield, Star, Home, MapPin, Calendar, Building2 } from 'lucide-react'
+import { Shield, Star, Home, MapPin, Calendar, Building2, Clock } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { responseSpeedFor, responseLabel } from '@/lib/response-time'
 
 export default async function PublicProfilePage({
   params,
@@ -47,6 +48,9 @@ export default async function PublicProfilePage({
   })
 
   if (!user) notFound()
+
+  // "Costuma responder em até 1 hora", calculado pelas conversas do chat
+  const responseTime = responseLabel(await responseSpeedFor(user))
 
   const avgRating = user.reviewsReceived.length
     ? user.reviewsReceived.reduce((a, r) => a + r.rating, 0) / user.reviewsReceived.length
@@ -101,6 +105,11 @@ export default async function PublicProfilePage({
                   {isAgent && user.creci && (
                     <span className="px-2.5 py-1 bg-violet-100 text-violet-700 text-xs font-semibold rounded-full">
                       CRECI {user.creci}{user.creciState ? `/${user.creciState}` : ''}
+                    </span>
+                  )}
+                  {responseTime && (
+                    <span className="flex items-center gap-1 px-2.5 py-1 bg-green-50 border border-green-200 text-green-700 text-xs font-semibold rounded-full">
+                      <Clock className="w-3 h-3" /> {responseTime}
                     </span>
                   )}
                 </div>
