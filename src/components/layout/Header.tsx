@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import {
   Heart, MessageCircle, User, Menu, X,
   PlusCircle, LogOut, Shield, ChevronDown, CreditCard,
@@ -26,6 +26,19 @@ export default function Header({ user }: HeaderProps) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [unread, setUnread] = useState(0)
+
+  // Conversas com mensagem nova — recarrega a cada troca de página
+  const userId = user?.id
+  useEffect(() => {
+    if (!userId) return
+    let alive = true
+    fetch('/api/mensagens/nao-lidas', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d) setUnread(d.count) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [userId, pathname])
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -74,14 +87,20 @@ export default function Header({ user }: HeaderProps) {
 
                 <Link
                   href="/mensagens"
+                  aria-label={unread > 0 ? `Mensagens: ${unread} conversa(s) com mensagem nova` : 'Mensagens'}
                   className={cn(
-                    'p-2 rounded-lg transition-colors',
-                    pathname === '/mensagens'
+                    'relative p-2 rounded-lg transition-colors',
+                    pathname.startsWith('/mensagens')
                       ? 'bg-indigo-50 text-indigo-600'
                       : 'text-gray-500 hover:bg-gray-100'
                   )}
                 >
                   <MessageCircle className="w-5 h-5" />
+                  {unread > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
+                      {unread > 9 ? '9+' : unread}
+                    </span>
+                  )}
                 </Link>
 
                 {/* User dropdown */}

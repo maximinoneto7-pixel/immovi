@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Heart, Bed, Bath, Car, MapPin, Maximize2, Shield, Star, Scale } from 'lucide-react'
-import { formatCurrency, formatArea, formatAlqueires, isRural, mainArea, PROPERTY_TYPES } from '@/lib/utils'
+import { formatCurrency, formatArea, formatAlqueires, isRural, mainArea, PROPERTY_TYPES, PROPERTY_STATUS } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { getCompareIds, toggleCompareId, COMPARE_EVENT, COMPARE_MAX } from '@/lib/compare'
+import { toggleFavorite } from '@/app/actions/property'
 
 interface PropertyCardProps {
   property: {
@@ -13,6 +15,7 @@ interface PropertyCardProps {
     title: string
     type: string
     listingType: string
+    status?: string
     price: number
     rentPrice?: number | null
     area: number
@@ -43,7 +46,10 @@ export default function PropertyCard({
   onToggleFavorite,
   className,
 }: PropertyCardProps) {
+  const router = useRouter()
   const [isComparing, setIsComparing] = useState(false)
+  const [favorited, setFavorited] = useState(isFavorite)
+  useEffect(() => setFavorited(isFavorite), [isFavorite])
 
   useEffect(() => {
     const sync = () => setIsComparing(getCompareIds().includes(property.id))
@@ -61,10 +67,22 @@ export default function PropertyCard({
     }
   }
 
-  const handleToggleFavorite = (e: React.MouseEvent) => {
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    onToggleFavorite?.(property.id)
+    if (onToggleFavorite) return onToggleFavorite(property.id)
+
+    const before = favorited
+    setFavorited(!before)
+    const result = await toggleFavorite(property.id)
+    if ('error' in result) {
+      setFavorited(before)
+      if (result.error === 'Não autenticado.') {
+        router.push(`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`)
+      }
+      return
+    }
+    setFavorited(result.favorited)
   }
 
   const coverImage = property.images.find((img) => img.isCover) || property.images[0]
@@ -117,6 +135,11 @@ export default function PropertyCard({
           <span className="px-2 py-1 bg-white/95 backdrop-blur text-gray-700 text-xs font-semibold rounded-lg shadow">
             {PROPERTY_TYPES[property.type] || property.type}
           </span>
+          {property.status && property.status !== 'ACTIVE' && (
+            <span className="px-2 py-1 bg-gray-900/80 text-white text-xs font-semibold rounded-lg shadow">
+              {PROPERTY_STATUS[property.status] || property.status}
+            </span>
+          )}
         </div>
 
         {/* Listing type */}
@@ -143,12 +166,12 @@ export default function PropertyCard({
         <button
           onClick={handleToggleFavorite}
           className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur shadow hover:bg-white transition-colors"
-          aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+          aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
         >
           <Heart
             className={cn(
               'w-4 h-4 transition-colors',
-              isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'
+              favorited ? 'fill-red-500 text-red-500' : 'text-gray-400'
             )}
           />
         </button>

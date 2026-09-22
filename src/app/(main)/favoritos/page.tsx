@@ -12,7 +12,8 @@ export default async function FavoritosPage() {
   if (!session?.user?.id) redirect('/login?redirect=/favoritos')
 
   const favorites = await prisma.favorite.findMany({
-    where: { userId: session.user.id },
+    // Pausados e excluídos saem da lista; vendidos e alugados aparecem com a etiqueta
+    where: { userId: session.user.id, property: { status: { in: ['ACTIVE', 'SOLD', 'RENTED'] } } },
     include: {
       property: {
         include: {

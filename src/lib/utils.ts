@@ -73,8 +73,9 @@ export const PROPERTY_STATUS: Record<string, string> = {
   ACTIVE: 'Disponível',
   SOLD: 'Vendido',
   RENTED: 'Alugado',
-  INACTIVE: 'Inativo',
+  INACTIVE: 'Pausado',
   PENDING: 'Pendente',
+  DELETED: 'Excluído',
 }
 
 export const LISTING_TYPES: Record<string, string> = {

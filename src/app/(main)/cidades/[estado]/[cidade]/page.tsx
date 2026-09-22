@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { favoriteIdsFor } from '@/lib/favorites'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/imoveis/PropertyCard'
@@ -77,6 +78,7 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
   ])
 
   if (stats._count._all === 0) notFound()
+  const favoriteIds = await favoriteIdsFor(session?.user?.id, properties.map((p) => p.id))
 
   const avgPrice = stats._avg.price || 0
   const total = stats._count._all
@@ -140,7 +142,7 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
           {/* Grid de imóveis */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
             {properties.map(p => (
-              <PropertyCard key={p.id} property={p as any} />
+              <PropertyCard key={p.id} property={p as any} isFavorite={favoriteIds.has(p.id)} />
             ))}
           </div>
 

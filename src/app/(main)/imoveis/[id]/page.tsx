@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation'
+import { headers } from 'next/headers'
+import { after } from 'next/server'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -7,12 +9,13 @@ import Footer from '@/components/layout/Footer'
 import PropertyGallery from '@/components/imoveis/PropertyGallery'
 import ContactForm from '@/components/imoveis/ContactForm'
 import DocumentVerification from '@/components/imoveis/DocumentVerification'
-import CompareToggleButton from '@/components/imoveis/CompareToggleButton'
+import ManageListingPanel from '@/components/imoveis/ManageListingPanel'
+import ListingActions from '@/components/imoveis/ListingActions'
 import CompareBar from '@/components/imoveis/CompareBar'
 import { getVideoEmbedUrl } from '@/lib/video'
 import {
   Bed, Bath, Car, Maximize2, MapPin, Shield, Star, Phone,
-  MessageCircle, Heart, Share2, Calendar, Eye, CheckCircle2,
+  MessageCircle, Heart, Calendar, Eye, CheckCircle2, Pause,
   Home, BookOpen, Leaf, Users, Video, ExternalLink,
 } from 'lucide-react'
 import { formatCurrency, formatArea, formatAlqueires, formatDate, isRural, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
@@ -33,7 +36,7 @@ export default async function PropertyDetailPage({
         select: {
           id: true, name: true, email: true, image: true, phone: true,
           bio: true, verified: true, createdAt: true,
-          _count: { select: { properties: true, reviewsReceived: true } },
+          _count: { select: { properties: { where: { status: 'ACTIVE' } }, reviewsReceived: true } },
         },
       },
       images: { orderBy: { order: 'asc' } },
@@ -50,11 +53,28 @@ export default async function PropertyDetailPage({
         orderBy: { createdAt: 'desc' },
         take: 5,
       },
-      _count: { select: { favorites: true } },
+      _count: { select: { favorites: true, conversations: true } },
     },
   })
 
   if (!property) notFound()
+
+  const isOwner = session?.user?.id === property.ownerId
+  const canManage = isOwner || session?.user?.role === 'ADMIN'
+  const isClosed = property.status === 'SOLD' || property.status === 'RENTED'
+  const isPaused = property.status === 'INACTIVE' || property.status === 'PENDING'
+
+  // Excluído some para todos; pausado só o dono (e o admin) vê
+  if (property.status === 'DELETED' || (isPaused && !canManage)) {
+    return <UnavailableListing user={session?.user} />
+  }
+
+  // Conta a visita de quem não é o dono, sem atrasar a página (e ignorando pré-carregamentos)
+  const h = await headers()
+  const isPrefetch = !!h.get('next-router-prefetch') || h.get('purpose') === 'prefetch'
+  if (!canManage && !isPaused && !isPrefetch) {
+    after(() => prisma.property.update({ where: { id }, data: { views: { increment: 1 } } }).catch(() => {}))
+  }
 
   const isFavorited = session?.user?.id
     ? !!(await prisma.favorite.findUnique({
@@ -95,7 +115,7 @@ export default async function PropertyDetailPage({
       '@type': 'Offer',
       price: displayPrice,
       priceCurrency: 'BRL',
-      availability: 'https://schema.org/InStock',
+      availability: isClosed ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
       url: `${BASE_URL}/imoveis/${property.id}`,
     },
     // floorSize é área de piso: não se aplica a terreno nem a imóvel rural
@@ -135,6 +155,24 @@ export default async function PropertyDetailPage({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main content */}
             <div className="lg:col-span-2 space-y-6">
+              {isPaused && (
+                <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm font-medium text-amber-800">
+                  <Pause className="w-4 h-4 flex-shrink-0" />
+                  Anúncio pausado: só você vê. Ele não aparece na busca.
+                </div>
+              )}
+              {isClosed && (
+                <div className="flex items-center gap-2 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-sm font-medium text-indigo-800">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  {property.status === 'SOLD' ? 'Este imóvel já foi vendido.' : 'Este imóvel já foi alugado.'}
+                  {!canManage && (
+                    <Link href={`/imoveis?type=${property.type}&city=${encodeURIComponent(property.city)}`} className="ml-auto underline font-semibold">
+                      Ver parecidos
+                    </Link>
+                  )}
+                </div>
+              )}
+
               {/* Gallery */}
               <PropertyGallery images={property.images} title={property.title} />
 
@@ -222,7 +260,7 @@ export default async function PropertyDetailPage({
                   </div>
                   <div className="flex items-center gap-3 text-sm text-gray-400 ml-auto">
                     <span className="flex items-center gap-1">
-                      <Eye className="w-4 h-4" /> {property.views} views
+                      <Eye className="w-4 h-4" /> {property.views} {property.views === 1 ? 'visualização' : 'visualizações'}
                     </span>
                     <span className="flex items-center gap-1">
                       <Heart className="w-4 h-4" /> {property._count.favorites}
@@ -436,6 +474,20 @@ export default async function PropertyDetailPage({
 
             {/* Sidebar */}
             <div className="space-y-4">
+              {/* Dono (ou admin): gerenciar em vez de contatar */}
+              {canManage && (
+                <ManageListingPanel
+                  propertyId={property.id}
+                  status={property.status}
+                  listingType={property.listingType}
+                  stats={{
+                    views: property.views,
+                    favorites: property._count.favorites,
+                    conversations: property._count.conversations,
+                  }}
+                />
+              )}
+
               {/* Owner card */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -477,29 +529,22 @@ export default async function PropertyDetailPage({
                 </Link>
               </div>
 
-              {/* Contact */}
-              <ContactForm
-                propertyId={property.id}
-                ownerId={property.owner.id}
-                ownerName={property.owner.name}
-                ownerPhone={property.owner.phone}
-                isLoggedIn={!!session}
-              />
-
-              {/* Actions */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="flex flex-wrap gap-2">
-                  <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                    <Heart className={`w-4 h-4 ${isFavorited ? 'fill-red-500 text-red-500' : ''}`} />
-                    {isFavorited ? 'Favoritado' : 'Favoritar'}
-                  </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                    <Share2 className="w-4 h-4" />
-                    Compartilhar
-                  </button>
-                  <CompareToggleButton propertyId={property.id} />
+              {/* Contato: só para visitantes, e enquanto o imóvel estiver disponível */}
+              {!canManage && (isClosed ? (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-sm text-gray-600">
+                  Este anúncio não recebe novos contatos porque o imóvel já foi {property.status === 'SOLD' ? 'vendido' : 'alugado'}.
                 </div>
-              </div>
+              ) : (
+                <ContactForm
+                  propertyId={property.id}
+                  ownerId={property.owner.id}
+                  ownerName={property.owner.name}
+                  ownerPhone={property.owner.phone}
+                  isLoggedIn={!!session}
+                />
+              ))}
+
+              <ListingActions propertyId={property.id} title={property.title} isFavorited={isFavorited} />
 
               {/* Security badge */}
               <div className="bg-indigo-50 rounded-2xl border border-indigo-100 p-4">
@@ -528,6 +573,27 @@ export default async function PropertyDetailPage({
       </main>
 
       <CompareBar />
+      <Footer />
+    </>
+  )
+}
+
+function UnavailableListing({ user }: { user?: unknown }) {
+  return (
+    <>
+      <Header user={user as any} />
+      <main className="flex-1 bg-gray-50">
+        <section className="max-w-xl mx-auto px-4 py-20 text-center flex flex-col items-center gap-4">
+          <div className="w-14 h-14 bg-gray-100 text-gray-400 rounded-2xl flex items-center justify-center">
+            <Home className="w-7 h-7" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Este anúncio não está disponível</h1>
+          <p className="text-gray-500">O anunciante pausou ou removeu este imóvel. Veja outros imóveis disponíveis.</p>
+          <Link href="/imoveis" className="mt-2 px-5 py-3 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition-colors">
+            Buscar imóveis
+          </Link>
+        </section>
+      </main>
       <Footer />
     </>
   )

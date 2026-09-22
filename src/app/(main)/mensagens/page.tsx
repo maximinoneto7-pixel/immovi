@@ -1,36 +1,17 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { listConversations } from '@/lib/chat'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import { MessageCircle, Home, Shield } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import ConversationList from '@/components/mensagens/ConversationList'
+import { MessageCircle, Home } from 'lucide-react'
 
 export default async function MensagensPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login?redirect=/mensagens')
 
-  const conversations = await prisma.conversation.findMany({
-    where: {
-      participants: { some: { userId: session.user.id } },
-    },
-    include: {
-      participants: {
-        include: {
-          user: { select: { id: true, name: true, image: true, verified: true } },
-        },
-      },
-      messages: {
-        orderBy: { createdAt: 'desc' },
-        take: 1,
-      },
-      property: {
-        select: { id: true, title: true, images: { take: 1 } },
-      },
-    },
-    orderBy: { updatedAt: 'desc' },
-  })
+  const conversations = await listConversations(session.user.id)
 
   return (
     <>
@@ -59,62 +40,7 @@ export default async function MensagensPage() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-2">
-              {conversations.map((conv) => {
-                const other = conv.participants.find((p) => p.userId !== session.user!.id)?.user
-                const lastMsg = conv.messages[0]
-                const hasUnread = lastMsg && lastMsg.receiverId === session.user!.id && lastMsg.status === 'SENT'
-
-                return (
-                  <Link
-                    key={conv.id}
-                    href={`/mensagens/${conv.id}`}
-                    className="flex items-center gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md transition-shadow"
-                  >
-                    {/* Avatar */}
-                    <div className="flex-shrink-0 relative">
-                      {other?.image ? (
-                        <img src={other.image} alt={other.name} className="w-12 h-12 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <span className="text-indigo-700 font-semibold">{other?.name?.charAt(0)}</span>
-                        </div>
-                      )}
-                      {hasUnread && (
-                        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-indigo-600 rounded-full border-2 border-white" />
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`font-semibold text-sm ${hasUnread ? 'text-gray-900' : 'text-gray-700'}`}>
-                            {other?.name}
-                          </span>
-                          {other?.verified && <Shield className="w-3.5 h-3.5 text-indigo-500" />}
-                        </div>
-                        {lastMsg && (
-                          <span className="text-xs text-gray-400 flex-shrink-0">{formatDate(lastMsg.createdAt)}</span>
-                        )}
-                      </div>
-
-                      {conv.property && (
-                        <div className="text-xs text-indigo-600 mb-0.5 truncate">
-                          {conv.property.title}
-                        </div>
-                      )}
-
-                      {lastMsg && (
-                        <p className={`text-xs truncate ${hasUnread ? 'font-medium text-gray-900' : 'text-gray-500'}`}>
-                          {lastMsg.senderId === session.user!.id ? 'Você: ' : ''}{lastMsg.content}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
+            <ConversationList conversations={conversations} currentUserId={session.user.id} />
           )}
         </div>
       </main>

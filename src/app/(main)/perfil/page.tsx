@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import PropertyCard from '@/components/imoveis/PropertyCard'
+import MyListings from '@/components/perfil/MyListings'
 import { Shield, Star, Home, PlusCircle, Edit, Phone, Mail, Calendar } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
@@ -15,12 +15,13 @@ export default async function PerfilPage() {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: {
+      // Todas as situações, menos os excluídos: pausados e vendidos continuam na sua lista
       properties: {
-        where: { status: 'ACTIVE' },
-        include: {
-          owner: { select: { id: true, name: true, image: true, verified: true } },
-          images: { orderBy: { order: 'asc' } },
-          features: true,
+        where: { status: { not: 'DELETED' } },
+        select: {
+          id: true, title: true, status: true, listingType: true, price: true, rentPrice: true, views: true,
+          images: { orderBy: { order: 'asc' }, select: { url: true, isCover: true } },
+          _count: { select: { conversations: true } },
         },
         orderBy: { createdAt: 'desc' },
       },
@@ -33,7 +34,7 @@ export default async function PerfilPage() {
       },
       _count: {
         select: {
-          properties: true,
+          properties: { where: { status: { not: 'DELETED' } } },
           favorites: true,
           reviewsReceived: true,
         },
@@ -150,11 +151,11 @@ export default async function PerfilPage() {
           </div>
 
           {/* Listings */}
-          <div className="mb-6">
+          <div id="meus-anuncios" className="mb-6 scroll-mt-20">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <Home className="w-5 h-5 text-indigo-500" />
-                Meus imóveis ({user.properties.length})
+                Meus anúncios ({user.properties.length})
               </h2>
               <Link
                 href="/imoveis/novo"
@@ -174,11 +175,19 @@ export default async function PerfilPage() {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {user.properties.map((p) => (
-                  <PropertyCard key={p.id} property={p as any} />
-                ))}
-              </div>
+              <MyListings
+                listings={user.properties.map((p) => ({
+                  id: p.id,
+                  title: p.title,
+                  status: p.status,
+                  listingType: p.listingType,
+                  price: p.price,
+                  rentPrice: p.rentPrice,
+                  views: p.views,
+                  conversations: p._count.conversations,
+                  coverUrl: (p.images.find((i) => i.isCover) ?? p.images[0])?.url ?? null,
+                }))}
+              />
             )}
           </div>
 

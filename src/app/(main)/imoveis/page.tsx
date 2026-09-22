@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { favoriteIdsFor } from '@/lib/favorites'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyCard from '@/components/imoveis/PropertyCard'
@@ -84,6 +85,7 @@ export default async function ImoveisPage({
   const params = await searchParams
   const session = await auth()
   const { properties, total, page, totalPages } = await getProperties(params)
+  const favoriteIds = await favoriteIdsFor(session?.user?.id, properties.map((p) => p.id))
 
   const hasFilters = params.q || params.type || params.listingType || params.city || params.state || params.minPrice || params.maxPrice || params.bedrooms
 
@@ -185,7 +187,7 @@ export default async function ImoveisPage({
                 <>
                   <div id="grid-view" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                     {properties.map((property) => (
-                      <PropertyCard key={property.id} property={property as any} />
+                      <PropertyCard key={property.id} property={property as any} isFavorite={favoriteIds.has(property.id)} />
                     ))}
                   </div>
 

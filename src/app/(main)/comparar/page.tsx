@@ -18,7 +18,8 @@ export default async function CompararPage({
 
   const properties = requestedIds.length >= 2
     ? await prisma.property.findMany({
-        where: { id: { in: requestedIds } },
+        // Pausados e excluídos não entram no comparador
+        where: { id: { in: requestedIds }, status: { in: ['ACTIVE', 'SOLD', 'RENTED'] } },
         include: {
           images: { orderBy: { order: 'asc' }, take: 1 },
           features: true,

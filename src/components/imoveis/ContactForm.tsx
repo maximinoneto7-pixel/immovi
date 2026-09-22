@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { MessageCircle, Phone, Calendar, Send, Shield } from 'lucide-react'
+import { MessageCircle, Phone, Calendar, Send, Shield, AlertCircle } from 'lucide-react'
 
 interface ContactFormProps {
   propertyId: string
@@ -22,6 +22,8 @@ export default function ContactForm({
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [conversationId, setConversationId] = useState<string | null>(null)
 
   const defaultMessages = [
     'Olá! Tenho interesse neste imóvel. Podemos conversar?',
@@ -32,16 +34,24 @@ export default function ContactForm({
   const handleSend = async () => {
     if (!message.trim()) return
     setLoading(true)
+    setError('')
     try {
       const res = await fetch('/api/mensagens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ propertyId, receiverId: ownerId, content: message }),
       })
+      const data = await res.json().catch(() => ({}))
       if (res.ok) {
+        setConversationId(data.conversationId ?? null)
         setSent(true)
         setMessage('')
+      } else {
+        // Ex.: mensagem bloqueada por conter telefone
+        setError(data.error || 'Não foi possível enviar. Tente novamente.')
       }
+    } catch {
+      setError('Sem conexão. Verifique sua internet e tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -84,11 +94,11 @@ export default function ContactForm({
           {ownerName} receberá sua mensagem e responderá em breve.
         </p>
         <Link
-          href="/mensagens"
+          href={conversationId ? `/mensagens/${conversationId}` : '/mensagens'}
           className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors"
         >
           <MessageCircle className="w-4 h-4" />
-          Ver minhas mensagens
+          Abrir a conversa
         </Link>
       </div>
     )
@@ -116,11 +126,18 @@ export default function ContactForm({
 
       <textarea
         value={message}
-        onChange={(e) => setMessage(e.target.value)}
+        onChange={(e) => { setMessage(e.target.value); if (error) setError('') }}
         placeholder="Ou escreva sua mensagem personalizada..."
         rows={3}
         className="w-full px-3 py-3 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none mb-3"
       />
+
+      {error && (
+        <div className="flex items-start gap-2 p-3 mb-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-700">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
 
       <button
         onClick={handleSend}

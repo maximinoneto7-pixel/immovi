@@ -17,7 +17,7 @@ export default async function DocumentosPage() {
   if (!session?.user?.id) redirect('/login?redirect=/documentos')
 
   const properties = await prisma.property.findMany({
-    where: { ownerId: session.user.id },
+    where: { ownerId: session.user.id, status: { not: 'DELETED' } },
     orderBy: { createdAt: 'desc' },
     include: {
       images: { take: 1, orderBy: { order: 'asc' } },

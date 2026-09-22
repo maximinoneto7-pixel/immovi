@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { favoriteIdsFor } from '@/lib/favorites'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import SearchBar from '@/components/common/SearchBar'
@@ -49,21 +50,13 @@ async function getRecentProperties() {
   })
 }
 
-async function getStats() {
-  const [properties, users] = await Promise.all([
-    prisma.property.count({ where: { status: 'ACTIVE' } }),
-    prisma.user.count(),
-  ])
-  return { properties, users }
-}
-
 export default async function HomePage() {
   const session = await auth()
-  const [featured, recent, stats] = await Promise.all([
+  const [featured, recent] = await Promise.all([
     getFeaturedProperties(),
     getRecentProperties(),
-    getStats(),
   ])
+  const favoriteIds = await favoriteIdsFor(session?.user?.id, [...featured, ...recent].map((p) => p.id))
 
   const typeLinks = [
     { href: '/imoveis?type=HOUSE', label: 'Casas', icon: Home, bg: 'bg-indigo-100 group-hover:bg-indigo-600', text: 'text-indigo-600 group-hover:text-white' },
@@ -104,21 +97,21 @@ export default async function HomePage() {
                 Sem intermediários desnecessários, com perfis verificados e negociações seguras.
               </p>
               <SearchBar className="max-w-3xl mx-auto" />
-              <div className="flex flex-wrap items-center justify-center gap-8 mt-10 text-sm">
-                <div className="text-center">
-                  <div className="text-3xl font-bold">{stats.properties.toLocaleString('pt-BR')}+</div>
-                  <div className="text-indigo-200">Imóveis ativos</div>
-                </div>
-                <div className="w-px h-10 bg-white/20 hidden sm:block" />
-                <div className="text-center">
-                  <div className="text-3xl font-bold">{stats.users.toLocaleString('pt-BR')}+</div>
-                  <div className="text-indigo-200">Usuários cadastrados</div>
-                </div>
-                <div className="w-px h-10 bg-white/20 hidden sm:block" />
-                <div className="text-center">
-                  <div className="text-3xl font-bold">100%</div>
-                  <div className="text-indigo-200">Negociações diretas</div>
-                </div>
+              {/* No celular, três colunas compactas; do tablet em diante, a faixa com divisórias */}
+              <div className="grid grid-cols-3 gap-2 mt-10 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-8">
+                {[
+                  { value: '1º anúncio', label: 'é grátis' },
+                  { value: '0%', label: 'de comissão obrigatória' },
+                  { value: '100%', label: 'negociações diretas' },
+                ].map((item, i) => (
+                  <div key={item.label} className="flex items-center justify-center sm:gap-8">
+                    {i > 0 && <div className="w-px h-10 bg-white/20 hidden sm:block" />}
+                    <div className="text-center">
+                      <div className="text-lg sm:text-3xl font-bold whitespace-nowrap">{item.value}</div>
+                      <div className="text-xs sm:text-sm text-indigo-200 leading-snug">{item.label}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -168,7 +161,7 @@ export default async function HomePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {featured.map((p, i) => (
                   <ScrollReveal key={p.id} delay={i * 60}>
-                    <PropertyCard property={p as any} />
+                    <PropertyCard property={p as any} isFavorite={favoriteIds.has(p.id)} />
                   </ScrollReveal>
                 ))}
               </div>
@@ -219,7 +212,7 @@ export default async function HomePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {recent.map((p, i) => (
                   <ScrollReveal key={p.id} delay={i * 60}>
-                    <PropertyCard property={p as any} />
+                    <PropertyCard property={p as any} isFavorite={favoriteIds.has(p.id)} />
                   </ScrollReveal>
                 ))}
               </div>

@@ -10,20 +10,26 @@ export interface LocationPickerHandle {
 interface LocationPickerProps {
   getAddress: () => { address: string; city: string; state: string }
   onChange: (lat: number, lng: number) => void
+  /** Ponto já salvo (edição do anúncio) */
+  initial?: { lat: number; lng: number } | null
 }
 
 const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(
-  ({ getAddress, onChange }, ref) => {
+  ({ getAddress, onChange, initial }, ref) => {
     const mapRef = useRef<HTMLDivElement>(null)
     const mapInstanceRef = useRef<any>(null)
     const markerRef = useRef<any>(null)
     const [searching, setSearching] = useState(false)
-    const [hasPin, setHasPin] = useState(false)
+    const [hasPin, setHasPin] = useState(!!initial)
 
     useEffect(() => {
       if (!mapRef.current || mapInstanceRef.current) return
+      // O Leaflet carrega de forma assíncrona: se o efeito for desfeito antes
+      // (Strict Mode monta duas vezes), não cria um segundo mapa no mesmo container
+      let cancelled = false
 
       import('leaflet').then((L) => {
+        if (cancelled || !mapRef.current || mapInstanceRef.current) return
         delete (L.Icon.Default.prototype as any)._getIconUrl
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -31,15 +37,15 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(
           shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
         })
 
-        const start: [number, number] = [-15.7801, -47.9292]
-        const map = L.map(mapRef.current!, { center: start, zoom: 4 })
+        const start: [number, number] = initial ? [initial.lat, initial.lng] : [-15.7801, -47.9292]
+        const map = L.map(mapRef.current!, { center: start, zoom: initial ? 16 : 4 })
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
           maxZoom: 19,
         }).addTo(map)
 
-        const marker = L.marker(start, { draggable: true, opacity: 0 }).addTo(map)
+        const marker = L.marker(start, { draggable: true, opacity: initial ? 1 : 0 }).addTo(map)
 
         marker.on('dragend', () => {
           const pos = marker.getLatLng()
@@ -58,6 +64,7 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(
       })
 
       return () => {
+        cancelled = true
         mapInstanceRef.current?.remove()
         mapInstanceRef.current = null
       }
