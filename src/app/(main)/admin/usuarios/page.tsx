@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Users, Shield, ArrowLeft, UserCheck, Home, MessageCircle, Search } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import OfficialToggle from '@/components/admin/OfficialToggle'
 
 export default async function AdminUsuariosPage({
   searchParams,
@@ -146,6 +147,7 @@ export default async function AdminUsuariosPage({
                         }`}>
                           {u.verified ? '✓ Verificado' : 'Pendente'}
                         </span>
+                        <div><OfficialToggle userId={u.id} initial={u.official} /></div>
                       </td>
                     </tr>
                   )

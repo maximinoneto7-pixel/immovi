@@ -24,7 +24,7 @@ export default async function PublicProfilePage({
       properties: {
         where: { status: 'ACTIVE' },
         include: {
-          owner: { select: { id: true, name: true, image: true, verified: true } },
+          owner: { select: { id: true, name: true, image: true, verified: true, official: true } },
           images: { orderBy: { order: 'asc' } },
           features: true,
         },

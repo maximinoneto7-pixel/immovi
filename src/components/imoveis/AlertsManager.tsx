@@ -17,7 +17,7 @@ interface SavedSearch {
 const FILTER_LABELS: Record<string, string> = {
   type: 'Tipo', listingType: 'Finalidade', city: 'Cidade',
   state: 'Estado', minPrice: 'Preço mín.', maxPrice: 'Preço máx.',
-  bedrooms: 'Quartos', q: 'Busca', minArea: 'Área mín.', maxArea: 'Área máx.',
+  bedrooms: 'Quartos', q: 'Busca', minArea: 'Área mín.', maxArea: 'Área máx.', oficial: 'Só oficiais Immovi',
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -33,6 +33,7 @@ function formatFilterValue(key: string, value: any, propertyType?: string): stri
   // A área da busca fica em m²; em buscas rurais aparece em hectares
   if (key === 'minArea' || key === 'maxArea') return formatArea(Number(value), propertyType)
   if (key === 'bedrooms') return `${value}+`
+  if (key === 'oficial') return 'Sim'
   return TYPE_LABELS[value] || value
 }
 

@@ -30,7 +30,7 @@ async function getFeaturedProperties() {
     take: 6,
     orderBy: { createdAt: 'desc' },
     include: {
-      owner: { select: { id: true, name: true, image: true, verified: true } },
+      owner: { select: { id: true, name: true, image: true, verified: true, official: true } },
       images: { orderBy: { order: 'asc' } },
       features: true,
     },
@@ -43,7 +43,7 @@ async function getRecentProperties() {
     take: 8,
     orderBy: { createdAt: 'desc' },
     include: {
-      owner: { select: { id: true, name: true, image: true, verified: true } },
+      owner: { select: { id: true, name: true, image: true, verified: true, official: true } },
       images: { orderBy: { order: 'asc' } },
       features: true,
     },

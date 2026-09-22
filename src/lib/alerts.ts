@@ -14,6 +14,7 @@ interface Property {
   city: string
   state: string
   images: { url: string; isCover: boolean }[]
+  owner?: { official: boolean } | null
 }
 
 interface SearchFilters {
@@ -27,6 +28,8 @@ interface SearchFilters {
   maxArea?: number
   bedrooms?: number
   q?: string
+  /** "1" = só anúncios oficiais da Immovi */
+  oficial?: string
 }
 
 function matchesFilters(property: Property, filters: SearchFilters): boolean {
@@ -41,6 +44,7 @@ function matchesFilters(property: Property, filters: SearchFilters): boolean {
   if (filters.minArea && property.area < filters.minArea) return false
   if (filters.maxArea && property.area > filters.maxArea) return false
   if (filters.bedrooms && (property.bedrooms || 0) < filters.bedrooms) return false
+  if (filters.oficial === '1' && !property.owner?.official) return false
 
   if (filters.q) {
     const q = filters.q.toLowerCase()

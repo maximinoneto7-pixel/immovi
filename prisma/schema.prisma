@@ -41,6 +41,8 @@ model User {
   // Chat: "online agora" / "visto por último" (showActivity=false esconde e, em troca, não vê o dos outros)
   lastSeenAt    DateTime?
   showActivity  Boolean   @default(true)
+  // Conta da própria Immovi: anúncios aparecem como "Oficial Immovi" (só o admin liga)
+  official      Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

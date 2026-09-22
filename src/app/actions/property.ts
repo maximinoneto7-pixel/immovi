@@ -86,7 +86,7 @@ function readPropertyForm(formData: FormData) {
 function notifyAlertsFor(propertyId: string) {
   prisma.property.findUnique({
     where: { id: propertyId },
-    include: { images: { take: 1, orderBy: { order: 'asc' } } },
+    include: { images: { take: 1, orderBy: { order: 'asc' } }, owner: { select: { official: true } } },
   }).then((p) => {
     if (p) notifyMatchingAlerts(p as any).catch(console.error)
   }).catch(console.error)

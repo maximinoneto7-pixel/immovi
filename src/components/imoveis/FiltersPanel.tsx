@@ -27,6 +27,7 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
     state: currentParams.state || '',
     city: currentParams.city || '',
     bedrooms: currentParams.bedrooms || '',
+    oficial: currentParams.oficial || '',
     minArea: toDisplayArea(currentParams.minArea, currentParams.type),
     maxArea: toDisplayArea(currentParams.maxArea, currentParams.type),
   })
@@ -69,7 +70,7 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
   }
 
   const clearFilters = () => {
-    setFilters({ type: '', listingType: '', minPrice: '', maxPrice: '', state: '', city: '', bedrooms: '', minArea: '', maxArea: '' })
+    setFilters({ type: '', listingType: '', minPrice: '', maxPrice: '', state: '', city: '', bedrooms: '', minArea: '', maxArea: '', oficial: '' })
     setCityInput('')
     router.push('/imoveis')
   }
@@ -96,6 +97,14 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
       </div>
 
       <div className="px-4">
+        {/* Só anúncios da conta oficial da Immovi */}
+        <label className="flex items-center gap-2 py-4 border-b border-gray-100 cursor-pointer">
+          <input type="checkbox" checked={filters.oficial === '1'}
+            onChange={(e) => setFilters((f) => ({ ...f, oficial: e.target.checked ? '1' : '' }))}
+            className="w-4 h-4 accent-indigo-600" />
+          <span className="text-sm font-semibold text-gray-800">Só anúncios oficiais Immovi</span>
+        </label>
+
         {/* Finalidade */}
         <Section id="finalidade" label="Finalidade">
           <div className="flex gap-2">
