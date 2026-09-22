@@ -7,7 +7,22 @@ import { absoluteUrl } from '@/lib/site'
 // Imagem que WhatsApp, Facebook, Telegram e Google mostram quando alguém compartilha o anúncio
 export const alt = 'Anúncio na Immovi'
 export const size = { width: 1200, height: 630 }
-export const contentType = 'image/png'
+export const contentType = 'image/jpeg'
+
+/**
+ * O ImageResponse devolve PNG, e uma foto em PNG passa de 1 MB — acima do que o
+ * WhatsApp aceita para mostrar a prévia. Reempacota em JPEG (cerca de 10x menor).
+ */
+async function asJpeg(image: ImageResponse): Promise<Response> {
+  // Carregado só aqui: o sharp é nativo e, importado no topo, atrapalha a geração dos ícones
+  const { default: sharp } = await import('sharp')
+  const png = Buffer.from(await image.arrayBuffer())
+  const jpeg = await sharp(png).jpeg({ quality: 82, mozjpeg: true }).toBuffer()
+  const headers = new Headers(image.headers)
+  headers.set('Content-Type', 'image/jpeg')
+  headers.delete('Content-Length')
+  return new Response(new Uint8Array(jpeg), { headers })
+}
 
 /** Baixa a fonte da marca em TTF (sem User-Agent o Google devolve truetype, que é o que o satori lê) */
 async function brandFont(weight: 500 | 800): Promise<ArrayBuffer | null> {
@@ -47,7 +62,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
 
   // Anúncio apagado ou inexistente: cartão só com a marca
   if (!property || property.status === 'DELETED') {
-    return new ImageResponse(
+    return asJpeg(new ImageResponse(
       (
         <div
           style={{
@@ -65,7 +80,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
         </div>
       ),
       { ...size, fonts },
-    )
+    ))
   }
 
   const cover = property.images.find((img) => img.isCover) || property.images[0]
@@ -85,7 +100,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
 
   const title = property.title.length > 58 ? `${property.title.slice(0, 57)}…` : property.title
 
-  return new ImageResponse(
+  return asJpeg(new ImageResponse(
     (
       <div style={{ width: '100%', height: '100%', display: 'flex', position: 'relative', backgroundImage: 'linear-gradient(135deg, #6366f1, #312e81)', fontFamily: font }}>
         {coverUrl && (
@@ -129,5 +144,5 @@ export default async function Image({ params }: { params: Promise<{ id: string }
       </div>
     ),
     { ...size, fonts },
-  )
+  ))
 }
