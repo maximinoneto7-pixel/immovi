@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Send, Shield, AlertCircle, Loader2, Home } from 'lucide-react'
+import { ArrowLeft, Send, Shield, AlertCircle, Loader2, Home, Check, CheckCheck } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
+import { isOnline, lastSeenLabel, whenLabel } from '@/lib/presence-labels'
 
 export interface ChatMessage {
   id: string
@@ -11,6 +12,7 @@ export interface ChatMessage {
   senderId: string
   receiverId: string
   status: string
+  readAt?: string | Date | null
   createdAt: string | Date
 }
 
@@ -26,6 +28,9 @@ interface ChatThreadProps {
     listingType: string; status: string; coverUrl: string | null
   } | null
   initialMessages: ChatMessage[]
+  /** "Visto por último" da outra pessoa — null quando a privacidade de um dos dois esconde */
+  initialOtherLastSeenAt: string | null
+  activityVisible: boolean
 }
 
 const POLL_MS = 4000
@@ -46,8 +51,12 @@ const PROPERTY_STATUS_LABEL: Record<string, string> = {
   INACTIVE: 'Pausado', SOLD: 'Vendido', RENTED: 'Alugado', DELETED: 'Anúncio removido',
 }
 
-export default function ChatThread({ conversationId, viewerId, canSend, other, property, initialMessages }: ChatThreadProps) {
+export default function ChatThread({
+  conversationId, viewerId, canSend, other, property, initialMessages, initialOtherLastSeenAt, activityVisible: initialActivityVisible,
+}: ChatThreadProps) {
   const [messages, setMessages] = useState(initialMessages)
+  const [otherLastSeenAt, setOtherLastSeenAt] = useState(initialOtherLastSeenAt)
+  const [activityVisible, setActivityVisible] = useState(initialActivityVisible)
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
@@ -58,7 +67,9 @@ export default function ChatThread({ conversationId, viewerId, canSend, other, p
     try {
       const res = await fetch(`/api/mensagens/${conversationId}`, { cache: 'no-store' })
       if (!res.ok) return
-      const data: { messages: ChatMessage[] } = await res.json()
+      const data: { messages: ChatMessage[]; otherLastSeenAt: string | null; activityVisible: boolean } = await res.json()
+      setOtherLastSeenAt(data.otherLastSeenAt)
+      setActivityVisible(data.activityVisible)
       setMessages((prev) => {
         const sig = (list: ChatMessage[]) => `${list.length}|${list.at(-1)?.id}|${list.filter((m) => m.status === 'READ').length}`
         return sig(prev) === sig(data.messages) ? prev : data.messages
@@ -103,6 +114,15 @@ export default function ChatThread({ conversationId, viewerId, canSend, other, p
   }
 
   const lastMineId = [...messages].reverse().find((m) => m.senderId === viewerId)?.id
+
+  // ✓ enviada · ✓✓ entregue (a pessoa entrou no site depois) · ✓✓ colorido visualizada
+  const deliveryOf = (m: ChatMessage): DeliveryState => {
+    if (!activityVisible) return 'sent'
+    if (m.status === 'READ') return 'read'
+    // Entregue se a pessoa entrou no site depois do envio — ou está com ele aberto agora
+    if (otherLastSeenAt && (isOnline(otherLastSeenAt) || new Date(otherLastSeenAt) > new Date(m.createdAt))) return 'delivered'
+    return 'sent'
+  }
   const propertyStatus = property ? PROPERTY_STATUS_LABEL[property.status] : undefined
   const propertyPrice = property
     ? property.listingType === 'RENT'
@@ -133,7 +153,13 @@ export default function ChatThread({ conversationId, viewerId, canSend, other, p
             <span className="font-semibold text-gray-900 truncate">{other?.name || 'Conversa'}</span>
             {other?.verified && <Shield className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />}
           </div>
-          <div className="text-xs text-green-600">Conversa protegida na plataforma</div>
+          {activityVisible && otherLastSeenAt ? (
+            <div className={cn('text-xs', isOnline(otherLastSeenAt) ? 'text-green-600 font-semibold' : 'text-gray-500')}>
+              {isOnline(otherLastSeenAt) ? '● Online agora' : lastSeenLabel(otherLastSeenAt)}
+            </div>
+          ) : (
+            <div className="text-xs text-green-600">Conversa protegida na plataforma</div>
+          )}
         </div>
         <div className="hidden sm:block">{propertyCard}</div>
       </div>
@@ -162,12 +188,15 @@ export default function ChatThread({ conversationId, viewerId, canSend, other, p
                   mine ? 'bg-indigo-600 text-white rounded-br-md' : 'bg-white border border-gray-100 text-gray-800 rounded-bl-md',
                 )}>
                   {m.content}
-                  <div className={cn('text-[10px] mt-1 text-right', mine ? 'text-indigo-200' : 'text-gray-400')}>
+                  <div className={cn('text-[10px] mt-1 flex items-center justify-end gap-1', mine ? 'text-indigo-200' : 'text-gray-400')}>
                     {timeOf(date)}
-                    {mine && m.id === lastMineId && m.status === 'READ' && ' · Lida'}
+                    {mine && <DeliveryMark state={deliveryOf(m)} />}
                   </div>
                 </div>
               </div>
+              {mine && m.id === lastMineId && activityVisible && m.status === 'READ' && m.readAt && (
+                <div className="text-[11px] text-gray-400 text-right -mt-1">Visualizada {whenLabel(m.readAt)}</div>
+              )}
             </div>
           )
         })}
@@ -247,5 +276,20 @@ function PropertyLink({ property, price, statusLabel }: {
     <Link href={`/imoveis/${property.id}`} className="flex items-center gap-2.5 p-1.5 pr-3 border border-gray-100 rounded-xl hover:border-indigo-200 transition-colors">
       {content}
     </Link>
+  )
+}
+
+type DeliveryState = 'sent' | 'delivered' | 'read'
+
+const DELIVERY_LABEL: Record<DeliveryState, string> = {
+  sent: 'Enviada', delivered: 'Entregue', read: 'Visualizada',
+}
+
+function DeliveryMark({ state }: { state: DeliveryState }) {
+  const Icon = state === 'sent' ? Check : CheckCheck
+  return (
+    <span title={DELIVERY_LABEL[state]} aria-label={DELIVERY_LABEL[state]}>
+      <Icon className={cn('w-3.5 h-3.5', state === 'read' ? 'text-cyan-300' : 'text-indigo-200')} />
+    </span>
   )
 }

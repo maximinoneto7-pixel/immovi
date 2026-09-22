@@ -131,6 +131,13 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Erro na análise de documento:', error)
 
+    // Nenhum provedor configurado aceita este formato (ex.: PDF com só o Grok ativo)
+    if (error.message === 'NENHUMA_CHAVE') {
+      return Response.json({
+        error: 'Não foi possível ler este formato agora. Envie uma foto do documento em JPG ou PNG.',
+      }, { status: 503 })
+    }
+
     if (error.message?.includes('JSON')) {
       return Response.json({
         error: 'Não consegui extrair os dados. Envie uma foto mais nítida do documento.',

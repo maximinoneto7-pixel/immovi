@@ -1,6 +1,10 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { after } from 'next/server'
 import { sendNewMessageEmail, sendPropertyInterestEmail } from '@/lib/email'
+import { sendPushToUser } from '@/lib/push'
+import { touchPresence } from '@/lib/presence'
+import { isOnline } from '@/lib/presence-labels'
 
 // Padrões que indicam tentativa de compartilhar telefone fora da plataforma
 const PHONE_PATTERNS = [
@@ -95,10 +99,13 @@ export async function POST(request: Request) {
     data: { updatedAt: new Date() },
   })
 
-  // Notificação por e-mail ao destinatário (assíncrono — não bloqueia a resposta)
-  prisma.user.findUnique({
+  await touchPresence(session.user.id)
+
+  // Avisos ao destinatário depois da resposta; after() garante que a Vercel espere
+  // terminar (uma promise solta pode ser congelada antes de o e-mail sair)
+  after(() => prisma.user.findUnique({
     where: { id: receiverId },
-    select: { name: true, email: true },
+    select: { name: true, email: true, lastSeenAt: true },
   }).then(async receiver => {
     if (!receiver) return
 
@@ -119,18 +126,27 @@ export async function POST(request: Request) {
     // Primeiro contato — e-mail especial de interesse
     if (isFirstMessage && property) {
       const priceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.price)
-      sendPropertyInterestEmail(
+      await sendPropertyInterestEmail(
         receiver.email, receiver.name, sender.name,
         property.title, propertyId!, `${property.city}/${property.state}`, priceFormatted
       ).catch(console.error)
     } else {
       // Mensagem de continuação
-      sendNewMessageEmail(
+      await sendNewMessageEmail(
         receiver.email, receiver.name, sender.name,
         content.trim(), property?.title || 'Imóvel', conversation.id
       ).catch(console.error)
     }
-  }).catch(console.error)
+
+    // Notificação no celular/computador só para quem não está com o site aberto
+    if (!isOnline(receiver.lastSeenAt)) {
+      await sendPushToUser(receiverId, {
+        title: `Nova mensagem de ${sender.name}`,
+        body: content.trim().slice(0, 120),
+        url: `/mensagens/${conversation.id}`,
+      }).catch(console.error)
+    }
+  }).catch(console.error))
 
   return Response.json({ message, conversationId: conversation.id })
 }

@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
-import { getConversationFor, listConversations, markConversationRead } from '@/lib/chat'
+import { chatViewFor, getConversationFor, listConversations, markConversationRead, viewerIdFor } from '@/lib/chat'
+import { touchPresence } from '@/lib/presence'
 import Header from '@/components/layout/Header'
 import ConversationList from '@/components/mensagens/ConversationList'
 import ChatThread from '@/components/mensagens/ChatThread'
@@ -17,8 +18,12 @@ export default async function ConversaPage({ params }: { params: Promise<{ id: s
   if (!conversation) notFound()
 
   if (conversation.isParticipant) {
+    await touchPresence(userId)
     await markConversationRead(id, userId)
-    conversation.messages.forEach((m) => { if (m.receiverId === userId) m.status = 'READ' })
+    const now = new Date()
+    conversation.messages.forEach((m) => {
+      if (m.receiverId === userId && m.status === 'SENT') { m.status = 'READ'; m.readAt = now }
+    })
   }
 
   // Lista ao lado só para quem participa (é a lista de conversas dele)
@@ -26,10 +31,13 @@ export default async function ConversaPage({ params }: { params: Promise<{ id: s
 
   // O admin acompanha pelo lado do dono do anúncio (ou do primeiro participante)
   const people = conversation.participants.map((p) => p.user)
-  const viewerId = conversation.isParticipant
-    ? userId
-    : people.find((u) => u.id === conversation.property?.ownerId)?.id ?? people[0]?.id ?? userId
-  const other = people.find((u) => u.id !== viewerId) ?? null
+  const viewerId = viewerIdFor(conversation, userId)
+  const otherUser = people.find((u) => u.id !== viewerId)
+  // Só o que pode ir para o navegador: o "visto por último" sai de chatViewFor, respeitando a privacidade
+  const other = otherUser
+    ? { id: otherUser.id, name: otherUser.name, image: otherUser.image, verified: otherUser.verified }
+    : null
+  const view = chatViewFor(conversation, viewerId)
 
   const property = conversation.property && {
     id: conversation.property.id,
@@ -59,7 +67,9 @@ export default async function ConversaPage({ params }: { params: Promise<{ id: s
               canSend={conversation.isParticipant}
               other={other}
               property={property}
-              initialMessages={conversation.messages}
+              initialMessages={view.messages}
+              initialOtherLastSeenAt={view.otherLastSeenAt?.toISOString() ?? null}
+              activityVisible={view.activityVisible}
             />
           </div>
         </div>

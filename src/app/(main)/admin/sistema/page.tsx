@@ -25,9 +25,7 @@ export default async function SistemaPage() {
   const emailConfigured = isEmailConfigured()
   const claudeKeys = getKeyCount('claude')
   const geminiKeys = getKeyCount('gemini')
-
-  const totalGeminiRpd = geminiKeys * 1500
-  const totalGeminiRpm = geminiKeys * 15
+  const grokKeys = getKeyCount('grok')
 
   return (
     <>
@@ -52,7 +50,57 @@ export default async function SistemaPage() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              {/* Gemini — Gratuito */}
+              {/* Grok — Principal */}
+              <div className={`bg-white rounded-2xl border-2 p-5 ${activeProvider === 'grok' ? 'border-gray-800' : 'border-gray-100'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center">
+                      <span className="text-sm font-bold text-white">X</span>
+                    </div>
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{PROVIDER_INFO.grok.name}</div>
+                      <div className="text-xs text-gray-500">{PROVIDER_INFO.grok.provider}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2.5 py-1 bg-gray-900 text-white text-xs font-bold rounded-full">PRINCIPAL</span>
+                    {activeProvider === 'grok' && (
+                      <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">ATIVO</span>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-xs text-gray-600 mb-3">{PROVIDER_INFO.grok.quality}</p>
+
+                <div className="space-y-1.5 mb-3">
+                  {[null, 1, 2, 3, 4, 5].map((n) => {
+                    const envKey = n === null ? 'XAI_API_KEY' : `XAI_API_KEY_${n}`
+                    const isActive = (n === null && grokKeys > 0) || (n !== null && grokKeys > n)
+                    return (
+                      <div key={envKey} className="flex items-center gap-2 text-xs">
+                        {isActive
+                          ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                          : <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                        }
+                        <code className={`font-mono ${isActive ? 'text-gray-800' : 'text-gray-400'}`}>{envKey}</code>
+                        {isActive && <span className="text-green-600 font-medium">configurada</span>}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <p className="text-xs text-amber-800 bg-amber-50 rounded-xl p-3">
+                  No console da xAI, não ative o compartilhamento de dados em troca de créditos grátis: os documentos têm nome e CPF.
+                </p>
+
+                <a href="https://console.x.ai" target="_blank" rel="noopener noreferrer"
+                  className="mt-3 flex items-center justify-center gap-1.5 py-2 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition-colors">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Obter chave no console da xAI
+                </a>
+              </div>
+
+              {/* Gemini — Reserva */}
               <div className={`bg-white rounded-2xl border-2 p-5 ${activeProvider === 'gemini' ? 'border-indigo-400' : 'border-gray-100'}`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -65,7 +113,7 @@ export default async function SistemaPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">GRATUITO</span>
+                    <span className="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">RESERVA</span>
                     {activeProvider === 'gemini' && (
                       <span className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">ATIVO</span>
                     )}
@@ -93,27 +141,14 @@ export default async function SistemaPage() {
                   })}
                 </div>
 
-                {/* Limites */}
-                <div className="bg-indigo-50 rounded-xl p-3 space-y-1">
-                  <div className="text-xs font-semibold text-indigo-800">Capacidade com {geminiKeys} chave{geminiKeys !== 1 ? 's' : ''}</div>
-                  <div className="flex justify-between text-xs text-indigo-700">
-                    <span>Por minuto:</span>
-                    <span className="font-bold">{totalGeminiRpm.toLocaleString('pt-BR')} req</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-indigo-700">
-                    <span>Por dia:</span>
-                    <span className="font-bold">{totalGeminiRpd.toLocaleString('pt-BR')} verificações</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-indigo-700">
-                    <span>Custo:</span>
-                    <span className="font-bold text-green-600">R$ 0,00</span>
-                  </div>
-                </div>
+                <p className="text-xs text-indigo-800 bg-indigo-50 rounded-xl p-3">
+                  Use o plano pago (com faturamento ativo): no gratuito o Google pode usar os documentos enviados para melhorar os produtos dele.
+                </p>
 
                 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer"
                   className="mt-3 flex items-center justify-center gap-1.5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
                   <ExternalLink className="w-3.5 h-3.5" />
-                  Obter chave gratuita no Google AI Studio
+                  Obter chave no Google AI Studio
                 </a>
               </div>
 

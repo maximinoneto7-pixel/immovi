@@ -6,7 +6,7 @@ export function listConversations(userId: string) {
     where: { participants: { some: { userId } } },
     include: {
       participants: {
-        include: { user: { select: { id: true, name: true, image: true, verified: true } } },
+        include: { user: { select: { id: true, name: true, image: true, verified: true, lastSeenAt: true, showActivity: true } } },
       },
       messages: { orderBy: { createdAt: 'desc' }, take: 1 },
       property: { select: { id: true, title: true } },
@@ -26,11 +26,11 @@ export async function getConversationFor(conversationId: string, userId: string,
     where: { id: conversationId },
     include: {
       participants: {
-        include: { user: { select: { id: true, name: true, image: true, verified: true } } },
+        include: { user: { select: { id: true, name: true, image: true, verified: true, lastSeenAt: true, showActivity: true } } },
       },
       messages: {
         orderBy: { createdAt: 'asc' },
-        select: { id: true, content: true, senderId: true, receiverId: true, status: true, createdAt: true },
+        select: { id: true, content: true, senderId: true, receiverId: true, status: true, readAt: true, createdAt: true },
       },
       property: {
         select: {
@@ -51,7 +51,7 @@ export async function getConversationFor(conversationId: string, userId: string,
 export function markConversationRead(conversationId: string, userId: string) {
   return prisma.message.updateMany({
     where: { conversationId, receiverId: userId, status: 'SENT' },
-    data: { status: 'READ' },
+    data: { status: 'READ', readAt: new Date() },
   })
 }
 
@@ -62,4 +62,33 @@ export async function countUnreadConversations(userId: string) {
     where: { receiverId: userId, status: 'SENT' },
   })
   return rows.length
+}
+
+type ConversationWithPeople = NonNullable<Awaited<ReturnType<typeof getConversationFor>>>
+
+/** Lado "meu" da conversa: o próprio usuário; para o admin, o dono do anúncio (ou o primeiro participante) */
+export function viewerIdFor(conversation: ConversationWithPeople, userId: string) {
+  if (conversation.isParticipant) return userId
+  const people = conversation.participants.map((p) => p.user)
+  return people.find((u) => u.id === conversation.property?.ownerId)?.id ?? people[0]?.id ?? userId
+}
+
+/**
+ * O que quem está vendo pode saber da outra pessoa. Se qualquer um dos dois
+ * desligou "mostrar atividade", some o "visto por último" e o "visualizada".
+ */
+export function chatViewFor(conversation: ConversationWithPeople, viewerId: string) {
+  const people = conversation.participants.map((p) => p.user)
+  const activityVisible = people.every((u) => u.showActivity)
+  const other = people.find((u) => u.id !== viewerId) ?? null
+
+  const messages = conversation.messages.map((m) => (
+    m.senderId === viewerId && !activityVisible ? { ...m, status: 'SENT', readAt: null } : m
+  ))
+
+  return {
+    activityVisible,
+    otherLastSeenAt: activityVisible ? other?.lastSeenAt ?? null : null,
+    messages,
+  }
 }

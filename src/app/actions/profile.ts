@@ -21,6 +21,7 @@ export async function updateProfile(formData: FormData) {
   const creciState = (formData.get('creciState') as string || '').trim()
   const agencyName = (formData.get('agencyName') as string || '').trim()
   const agencyPhone = (formData.get('agencyPhone') as string || '').trim()
+  const showActivity = formData.get('showActivity') === 'true'
 
   if (!name) return { error: 'Nome é obrigatório.' }
 
@@ -55,6 +56,7 @@ export async function updateProfile(formData: FormData) {
       creciState: creciState || null,
       agencyName: agencyName || null,
       agencyPhone: agencyPhone || null,
+      showActivity,
     },
   })
 

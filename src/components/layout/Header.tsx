@@ -28,16 +28,27 @@ export default function Header({ user }: HeaderProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [unread, setUnread] = useState(0)
 
-  // Conversas com mensagem nova — recarrega a cada troca de página
+  // Sinal de "online" + conversas com mensagem nova: a cada troca de página,
+  // a cada minuto com a aba visível e quando a aba volta a ficar visível
   const userId = user?.id
   useEffect(() => {
     if (!userId) return
     let alive = true
-    fetch('/api/mensagens/nao-lidas', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive && d) setUnread(d.count) })
-      .catch(() => {})
-    return () => { alive = false }
+    const ping = () => {
+      if (document.visibilityState !== 'visible') return
+      fetch('/api/presenca', { method: 'POST', cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (alive && d) setUnread(d.unread) })
+        .catch(() => {})
+    }
+    ping()
+    const timer = setInterval(ping, 60_000)
+    document.addEventListener('visibilitychange', ping)
+    return () => {
+      alive = false
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', ping)
+    }
   }, [userId, pathname])
 
   return (

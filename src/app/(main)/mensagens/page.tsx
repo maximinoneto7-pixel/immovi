@@ -5,6 +5,7 @@ import { listConversations } from '@/lib/chat'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import ConversationList from '@/components/mensagens/ConversationList'
+import PushNotificationToggle from '@/components/common/PushNotificationToggle'
 import { MessageCircle, Home } from 'lucide-react'
 
 export default async function MensagensPage() {
@@ -24,6 +25,9 @@ export default async function MensagensPage() {
               {conversations.length} conversa{conversations.length !== 1 ? 's' : ''}
             </p>
           </div>
+
+          {/* Aviso de mensagem nova no celular/computador quando o site não está aberto */}
+          <PushNotificationToggle />
 
           {conversations.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">

@@ -22,6 +22,7 @@ interface EditProfileFormProps {
     creciState: string | null
     agencyName: string | null
     agencyPhone: string | null
+    showActivity: boolean
   }
 }
 
@@ -103,6 +104,21 @@ export default function EditProfileForm({ user }: EditProfileFormProps) {
             placeholder="Conte um pouco sobre você..."
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
         </div>
+      </div>
+
+      {/* Privacidade do chat */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
+        <h2 className="font-bold text-gray-900 text-lg border-b border-gray-100 pb-3">Privacidade</h2>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" name="showActivity" value="true" defaultChecked={user.showActivity}
+            className="w-4 h-4 mt-0.5 accent-indigo-600" />
+          <span>
+            <span className="block text-sm font-medium text-gray-800">Mostrar quando estou online e quando vi as mensagens</span>
+            <span className="block text-xs text-gray-500 mt-0.5">
+              Se desligar, os outros não veem seu “online agora”, “visto por último” nem “visualizada”, e você também deixa de ver o deles.
+            </span>
+          </span>
+        </label>
       </div>
 
       {isAgent && (

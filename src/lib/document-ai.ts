@@ -1,5 +1,4 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // ─── Rotatividade de chaves (até 5 por provedor) ────────────────────────────
 
@@ -14,47 +13,76 @@ function collectKeys(prefix: string): string[] {
   return [...new Set(keys)]
 }
 
-const keyIndex: Record<string, number> = { claude: 0, gemini: 0 }
+type Provider = 'grok' | 'gemini' | 'claude'
 
-function peekKeys(provider: 'claude' | 'gemini'): string[] {
-  const prefix = provider === 'claude' ? 'ANTHROPIC_API_KEY' : 'GOOGLE_AI_API_KEY'
-  return collectKeys(prefix)
+const KEY_PREFIX: Record<Provider, string> = {
+  grok: 'XAI_API_KEY',
+  gemini: 'GOOGLE_AI_API_KEY',
+  claude: 'ANTHROPIC_API_KEY',
 }
 
-export function getKeyCount(provider: 'claude' | 'gemini'): number {
+const keyIndex: Record<Provider, number> = { grok: 0, gemini: 0, claude: 0 }
+
+function peekKeys(provider: Provider): string[] {
+  return collectKeys(KEY_PREFIX[provider])
+}
+
+export function getKeyCount(provider: Provider): number {
   return peekKeys(provider).length
 }
 
-// ─── Provedor ativo ─────────────────────────────────────────────────────────
+// Modelos configuráveis sem novo deploy de código (a Vercel só precisa reiniciar)
+const GROK_MODEL = process.env.XAI_MODEL || 'grok-4.7'
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 
-export type AIProvider = 'claude' | 'gemini' | 'none'
+// ─── Provedores: ordem de uso e formatos aceitos ───────────────────────────
+// Grok é o principal; Gemini é a reserva e também lê PDF e WebP, que o Grok não aceita.
 
+const PROVIDER_ORDER: Provider[] = ['grok', 'gemini', 'claude']
+
+const ACCEPTS: Record<Provider, string[]> = {
+  grok: ['image/jpeg', 'image/png'],
+  gemini: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+  claude: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+}
+
+export type AIProvider = Provider | 'none'
+
+/** Primeiro provedor configurado (o que o painel mostra como principal) */
 export function getActiveProvider(): AIProvider {
-  if (peekKeys('claude').length) return 'claude'
-  if (peekKeys('gemini').length) return 'gemini'
-  return 'none'
+  return PROVIDER_ORDER.find((p) => peekKeys(p).length) ?? 'none'
 }
 
 export const PROVIDER_INFO = {
+  grok: {
+    name: `Grok (${GROK_MODEL})`,
+    provider: 'xAI',
+    tier: 'Pago — principal',
+    quality: 'Lê fotos de documentos (JPG e PNG); PDFs vão para a reserva',
+    limits: { rpm: 60, rpd: 0, notes: 'Cobrado por uso nos créditos da conta xAI.' },
+    setup: 'console.x.ai → API Keys',
+    envVars: ['XAI_API_KEY', 'XAI_API_KEY_1', '… até XAI_API_KEY_5'],
+    color: 'gray',
+  },
+  gemini: {
+    name: `Gemini (${GEMINI_MODEL})`,
+    provider: 'Google',
+    tier: 'Pago — reserva',
+    quality: 'Lê PDF e imagens; assume quando o Grok falha ou o arquivo é PDF/WebP',
+    limits: { rpm: 60, rpd: 0, notes: 'Plano pago do Google AI Studio (o gratuito pode usar os dados para treino).' },
+    setup: 'aistudio.google.com → Get API Key → ativar faturamento',
+    envVars: ['GOOGLE_AI_API_KEY', 'GOOGLE_AI_API_KEY_1', '… até GOOGLE_AI_API_KEY_5'],
+    color: 'blue',
+  },
   claude: {
     name: 'Claude Opus 4.8',
     provider: 'Anthropic',
-    tier: 'Pago',
+    tier: 'Pago — opcional',
     quality: 'Máxima — leitura de documentos complexos, manuscritos, baixa resolução',
     limits: { rpm: 50, rpd: 5000, notes: '~$0,015 por verificação. Sem limite diário com créditos.' },
     setup: 'console.anthropic.com → API Keys',
     envVars: ['ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY_1', '… até ANTHROPIC_API_KEY_5'],
     color: 'violet',
-  },
-  gemini: {
-    name: 'Gemini 1.5 Flash',
-    provider: 'Google',
-    tier: 'Gratuito',
-    quality: 'Boa — documentos legíveis, ótimo custo-benefício para começar',
-    limits: { rpm: 15, rpd: 1500, notes: '1.500 verificações/dia grátis. Sem cartão de crédito.' },
-    setup: 'aistudio.google.com → Get API Key',
-    envVars: ['GOOGLE_AI_API_KEY', 'GOOGLE_AI_API_KEY_1', '… até GOOGLE_AI_API_KEY_5'],
-    color: 'blue',
   },
   none: {
     name: 'Nenhum configurado',
@@ -148,89 +176,135 @@ export interface DocumentAnalysis {
   rawSummary: string
 }
 
-// ─── Claude (pago) — rotatividade automática entre chaves ──────────────────
-
-async function analyzeWithClaude(fileBase64: string, mediaType: string, sellerName: string) {
-  const keys = peekKeys('claude')
-  if (!keys.length) throw new Error('NENHUMA_CHAVE')
-
-  let lastError: any
-  for (let attempt = 0; attempt < keys.length; attempt++) {
-    const key = keys[(keyIndex.claude + attempt) % keys.length]
-    try {
-      const client = new Anthropic({ apiKey: key })
-      const contentBlock = mediaType === 'application/pdf'
-        ? { type: 'document' as const, source: { type: 'base64' as const, media_type: 'application/pdf' as const, data: fileBase64 } }
-        : { type: 'image' as const, source: { type: 'base64' as const, media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/webp', data: fileBase64 } }
-
-      const response = await client.messages.create({
-        model: 'claude-opus-4-8',
-        max_tokens: 2048,
-        thinking: { type: 'adaptive' },
-        messages: [{ role: 'user', content: [contentBlock as any, { type: 'text', text: buildPrompt(sellerName) }] }],
-      })
-
-      // Avança o índice só quando sucesso
-      keyIndex.claude = (keyIndex.claude + attempt + 1) % keys.length
-      const text = response.content.filter((b) => b.type === 'text').map((b: any) => b.text).join('')
-      return buildResult(parseJSON(text))
-    } catch (err: any) {
-      lastError = err
-      // 429 = rate limit → tenta próxima chave; outros erros abortam
-      if (!err?.status || err.status !== 429) break
-    }
-  }
-  throw lastError
+class ProviderError extends Error {
+  constructor(message: string, public status?: number) { super(message) }
 }
 
-// ─── Gemini (gratuito) — rotatividade automática entre chaves ───────────────
-
-async function analyzeWithGemini(fileBase64: string, mediaType: string, sellerName: string) {
-  const keys = peekKeys('gemini')
+/** Tenta cada chave do provedor; 429 (limite) passa para a próxima chave */
+async function withKeyRotation<T>(provider: Provider, call: (key: string) => Promise<T>): Promise<T> {
+  const keys = peekKeys(provider)
   if (!keys.length) throw new Error('NENHUMA_CHAVE')
 
   let lastError: any
   for (let attempt = 0; attempt < keys.length; attempt++) {
-    const key = keys[(keyIndex.gemini + attempt) % keys.length]
+    const key = keys[(keyIndex[provider] + attempt) % keys.length]
     try {
-      const genAI = new GoogleGenerativeAI(key)
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-
-      const result = await model.generateContent([
-        buildPrompt(sellerName),
-        { inlineData: { data: fileBase64, mimeType: mediaType } },
-      ])
-
-      keyIndex.gemini = (keyIndex.gemini + attempt + 1) % keys.length
-      return buildResult(parseJSON(result.response.text()))
+      const result = await call(key)
+      keyIndex[provider] = (keyIndex[provider] + attempt + 1) % keys.length
+      return result
     } catch (err: any) {
       lastError = err
-      // 429 ou RESOURCE_EXHAUSTED → tenta próxima chave
-      const isRateLimit = err?.status === 429 || err?.message?.includes('429') || err?.message?.includes('RESOURCE_EXHAUSTED')
+      const isRateLimit = err?.status === 429 || /429|RESOURCE_EXHAUSTED/.test(err?.message || '')
       if (!isRateLimit) break
     }
   }
   throw lastError
 }
 
+// ─── Grok (xAI) — principal ─────────────────────────────────────────────────
+
+async function analyzeWithGrok(fileBase64: string, mediaType: string, sellerName: string) {
+  return withKeyRotation('grok', async (key) => {
+    const res = await fetch('https://api.x.ai/v1/responses', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: GROK_MODEL,
+        input: [{
+          role: 'user',
+          content: [
+            { type: 'input_image', image_url: `data:${mediaType};base64,${fileBase64}`, detail: 'high' },
+            { type: 'input_text', text: buildPrompt(sellerName) },
+          ],
+        }],
+      }),
+    })
+    const data: any = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ProviderError(`xAI ${res.status}: ${data?.error?.message || data?.error || 'erro'}`, res.status)
+
+    const text: string = data.output_text
+      ?? (data.output || []).flatMap((o: any) => o.content || []).filter((c: any) => c.type === 'output_text').map((c: any) => c.text).join('')
+    return buildResult(parseJSON(text || ''))
+  })
+}
+
+// ─── Gemini (Google) — reserva ──────────────────────────────────────────────
+
+async function analyzeWithGemini(fileBase64: string, mediaType: string, sellerName: string) {
+  return withKeyRotation('gemini', async (key) => {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: buildPrompt(sellerName) },
+              { inline_data: { mime_type: mediaType, data: fileBase64 } },
+            ],
+          }],
+          generationConfig: { temperature: 0, responseMimeType: 'application/json' },
+        }),
+      },
+    )
+    const data: any = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ProviderError(`Gemini ${res.status}: ${data?.error?.message || 'erro'}`, res.status)
+
+    const text: string = (data.candidates?.[0]?.content?.parts || []).map((p: any) => p.text || '').join('')
+    return buildResult(parseJSON(text))
+  })
+}
+
+// ─── Claude (Anthropic) — opcional, só se houver chave ──────────────────────
+
+async function analyzeWithClaude(fileBase64: string, mediaType: string, sellerName: string) {
+  return withKeyRotation('claude', async (key) => {
+    const client = new Anthropic({ apiKey: key })
+    const contentBlock = mediaType === 'application/pdf'
+      ? { type: 'document' as const, source: { type: 'base64' as const, media_type: 'application/pdf' as const, data: fileBase64 } }
+      : { type: 'image' as const, source: { type: 'base64' as const, media_type: mediaType as 'image/jpeg' | 'image/png' | 'image/webp', data: fileBase64 } }
+
+    const response = await client.messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 2048,
+      thinking: { type: 'adaptive' },
+      messages: [{ role: 'user', content: [contentBlock as any, { type: 'text', text: buildPrompt(sellerName) }] }],
+    })
+    const text = response.content.filter((b) => b.type === 'text').map((b: any) => b.text).join('')
+    return buildResult(parseJSON(text))
+  })
+}
+
+const ANALYZERS: Record<Provider, typeof analyzeWithGrok> = {
+  grok: analyzeWithGrok,
+  gemini: analyzeWithGemini,
+  claude: analyzeWithClaude,
+}
+
 // ─── Função pública ─────────────────────────────────────────────────────────
 
+/**
+ * Lê o documento com o primeiro provedor configurado que aceita o formato;
+ * se ele falhar, passa para o próximo (Grok → Gemini → Claude).
+ */
 export async function analyzePropertyDocument(
   fileBase64: string,
   mediaType: string,
   sellerName: string
 ): Promise<{ analysis: DocumentAnalysis; ownerMatch: boolean; ownerMatchDetails: string; provider: AIProvider }> {
-  const provider = getActiveProvider()
+  const candidates = PROVIDER_ORDER.filter((p) => peekKeys(p).length && ACCEPTS[p].includes(mediaType))
+  if (!candidates.length) throw new Error('NENHUMA_CHAVE')
 
-  if (provider === 'claude') {
-    const result = await analyzeWithClaude(fileBase64, mediaType, sellerName)
-    return { ...result, provider }
+  let lastError: unknown
+  for (const provider of candidates) {
+    try {
+      const result = await ANALYZERS[provider](fileBase64, mediaType, sellerName)
+      return { ...result, provider }
+    } catch (err) {
+      console.error(`[document-ai] ${provider} falhou:`, (err as Error).message)
+      lastError = err
+    }
   }
-
-  if (provider === 'gemini') {
-    const result = await analyzeWithGemini(fileBase64, mediaType, sellerName)
-    return { ...result, provider }
-  }
-
-  throw new Error('NENHUMA_CHAVE')
+  throw lastError
 }

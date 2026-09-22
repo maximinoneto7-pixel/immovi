@@ -96,7 +96,7 @@ export default function PushNotificationToggle() {
           {status === 'denied'
             ? 'Bloqueadas no navegador — habilite nas configurações do site para ativar.'
             : status === 'subscribed'
-              ? 'Ativadas neste dispositivo — você recebe avisos instantâneos dos seus alertas.'
+              ? 'Ativadas neste dispositivo — você recebe avisos de mensagens novas e dos seus alertas.'
               : 'Receba um aviso instantâneo no celular/navegador, além do e-mail.'}
         </div>
       </div>

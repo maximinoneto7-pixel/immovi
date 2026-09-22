@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatArea, formatAlqueires, formatDate, isRural, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
 import { typeFields } from '@/lib/property-fields'
+import { activityLabel, isOnline } from '@/lib/presence-labels'
 
 export default async function PropertyDetailPage({
   params,
@@ -36,7 +37,7 @@ export default async function PropertyDetailPage({
         select: {
           // Sem telefone: o contato acontece pelo chat da plataforma
           id: true, name: true, image: true,
-          bio: true, verified: true, createdAt: true,
+          bio: true, verified: true, createdAt: true, lastSeenAt: true, showActivity: true,
           _count: { select: { properties: { where: { status: 'ACTIVE' } }, reviewsReceived: true } },
         },
       },
@@ -59,6 +60,10 @@ export default async function PropertyDetailPage({
   })
 
   if (!property) notFound()
+
+  // Atividade aproximada do anunciante ("Ativo hoje"), nunca o horário exato; respeita a privacidade dele
+  const ownerActivity = property.owner.showActivity ? activityLabel(property.owner.lastSeenAt) : null
+  const ownerOnline = !!ownerActivity && isOnline(property.owner.lastSeenAt)
 
   const isOwner = session?.user?.id === property.ownerId
   const canManage = isOwner || session?.user?.role === 'ADMIN'
@@ -515,6 +520,11 @@ export default async function PropertyDetailPage({
                       {' · '}
                       Desde {new Date(property.owner.createdAt).getFullYear()}
                     </div>
+                    {ownerActivity && (
+                      <div className={`text-xs font-semibold mt-0.5 ${ownerOnline ? 'text-green-600' : 'text-gray-500'}`}>
+                        {ownerOnline ? '● ' : ''}{ownerActivity}
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -4,7 +4,7 @@ import Footer from '@/components/layout/Footer'
 import { auth } from '@/lib/auth'
 import { Shield, ChevronRight } from 'lucide-react'
 
-const ULTIMA_ATUALIZACAO = '25 de junho de 2026'
+const ULTIMA_ATUALIZACAO = '22 de setembro de 2026'
 
 const sections = [
   { id: 'introducao', title: '1. Introdução e Identificação do Controlador' },
@@ -111,6 +111,7 @@ export default async function PrivacidadePage() {
                 <li><strong>Dados de navegação:</strong> endereço IP, tipo de navegador, sistema operacional, páginas visitadas, tempo de permanência</li>
                 <li><strong>Dados de dispositivo:</strong> identificadores de dispositivo, resolução de tela</li>
                 <li><strong>Dados de geolocalização:</strong> localização aproximada inferida do IP (não coletamos GPS)</li>
+                <li><strong>Status de atividade no chat:</strong> quando você esteve no site pela última vez e quando visualizou as mensagens recebidas. Essas informações aparecem apenas para as pessoas com quem você conversa (“Online agora”, “Visto por último”, “Visualizada”) e, de forma aproximada, no seu cartão de anunciante (“Ativo hoje”, “Ativo nesta semana”), nunca com o horário exato. Você pode desligar a qualquer momento em <em>Editar perfil → Privacidade</em>; ao desligar, você também deixa de ver o status dos outros.</li>
                 <li><strong>Cookies e tecnologias similares:</strong> conforme descrito na Seção 8</li>
               </ul>
 

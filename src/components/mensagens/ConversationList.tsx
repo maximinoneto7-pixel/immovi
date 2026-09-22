@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Shield } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 import type { ConversationSummary } from '@/lib/chat'
+import { isOnline } from '@/lib/presence-labels'
 
 interface ConversationListProps {
   conversations: ConversationSummary[]
@@ -18,6 +19,8 @@ export default function ConversationList({ conversations, currentUserId, activeI
       {conversations.map((conv) => {
         const other = conv.participants.find((p) => p.userId !== currentUserId)?.user
         const lastMsg = conv.messages[0]
+        // Bolinha verde só se os dois mostram atividade (opção de privacidade do perfil)
+        const online = conv.participants.every((p) => p.user.showActivity) && isOnline(other?.lastSeenAt)
         const hasUnread = lastMsg && lastMsg.receiverId === currentUserId && lastMsg.status === 'SENT'
 
         return (
@@ -43,6 +46,9 @@ export default function ConversationList({ conversations, currentUserId, activeI
               )}
               {hasUnread && (
                 <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-indigo-600 rounded-full border-2 border-white" />
+              )}
+              {online && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" title="Online agora" />
               )}
             </div>
 

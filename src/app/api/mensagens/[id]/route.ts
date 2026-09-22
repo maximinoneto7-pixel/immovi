@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth'
-import { getConversationFor, markConversationRead } from '@/lib/chat'
+import { chatViewFor, getConversationFor, markConversationRead, viewerIdFor } from '@/lib/chat'
+import { touchPresence } from '@/lib/presence'
 
 // Mensagens de uma conversa (a tela da conversa consulta a cada poucos segundos)
 export async function GET(_request: Request, ctx: RouteContext<'/api/mensagens/[id]'>) {
@@ -7,22 +8,30 @@ export async function GET(_request: Request, ctx: RouteContext<'/api/mensagens/[
   if (!session?.user?.id) {
     return Response.json({ error: 'Não autenticado.' }, { status: 401 })
   }
+  const userId = session.user.id
 
   const { id } = await ctx.params
-  const conversation = await getConversationFor(id, session.user.id, session.user.role)
+  const conversation = await getConversationFor(id, userId, session.user.role)
   if (!conversation) {
     return Response.json({ error: 'Conversa não encontrada.' }, { status: 404 })
   }
 
   if (conversation.isParticipant) {
-    const { count } = await markConversationRead(id, session.user.id)
+    await touchPresence(userId)
+    const { count } = await markConversationRead(id, userId)
     // O que acabou de ser marcado já sai como lido nesta resposta
     if (count > 0) {
+      const now = new Date()
       conversation.messages.forEach((m) => {
-        if (m.receiverId === session.user.id) m.status = 'READ'
+        if (m.receiverId === userId && m.status === 'SENT') { m.status = 'READ'; m.readAt = now }
       })
     }
   }
 
-  return Response.json({ messages: conversation.messages })
+  const view = chatViewFor(conversation, viewerIdFor(conversation, userId))
+  return Response.json({
+    messages: view.messages,
+    otherLastSeenAt: view.otherLastSeenAt,
+    activityVisible: view.activityVisible,
+  })
 }
