@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { MessageCircle, Phone, Calendar, Send, Shield, AlertCircle } from 'lucide-react'
 
@@ -20,6 +20,7 @@ export default function ContactForm({
   isLoggedIn,
 }: ContactFormProps) {
   const [message, setMessage] = useState('')
+  const messageRef = useRef<HTMLTextAreaElement>(null)
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -125,6 +126,7 @@ export default function ContactForm({
       </div>
 
       <textarea
+        ref={messageRef}
         value={message}
         onChange={(e) => { setMessage(e.target.value); if (error) setError('') }}
         placeholder="Ou escreva sua mensagem personalizada..."
@@ -160,13 +162,18 @@ export default function ContactForm({
         </a>
       )}
 
-      <a
-        href="#agendar"
+      {/* Preenche o pedido de visita e deixa pronto para enviar */}
+      <button
+        type="button"
+        onClick={() => {
+          setMessage('Gostaria de agendar uma visita. Qual sua disponibilidade?')
+          messageRef.current?.focus()
+        }}
         className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm"
       >
         <Calendar className="w-4 h-4 text-indigo-500" />
         Agendar visita
-      </a>
+      </button>
 
       <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-400">
         <Shield className="w-3.5 h-3.5" />

@@ -14,7 +14,8 @@ export async function POST(request: Request) {
   const provider = getActiveProvider()
   if (provider === 'none') {
     return Response.json({
-      error: 'NENHUMA_CHAVE',
+      error: 'A verificação automática de documentos está indisponível no momento. Tente novamente mais tarde.',
+      code: 'NENHUMA_CHAVE',
       providers: PROVIDER_INFO,
     }, { status: 503 })
   }
