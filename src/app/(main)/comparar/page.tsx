@@ -23,7 +23,7 @@ export default async function CompararPage({
         include: {
           images: { orderBy: { order: 'asc' }, take: 1 },
           features: true,
-          owner: { select: { name: true, verified: true, official: true } },
+          owner: { select: { name: true, verified: true } },
         },
       })
     : []
@@ -159,8 +159,8 @@ export default async function CompararPage({
                       {ordered.map((p) => (
                         <td key={p.id} className="p-4 text-gray-700">
                           <div className="flex items-center gap-1">
-                            {p.owner.official ? 'Immovi (oficial)' : p.owner.name}
-                            {(p.owner.verified || p.owner.official) && <Shield className="w-3.5 h-3.5 text-indigo-500" />}
+                            {p.owner.name}
+                            {p.owner.verified && <Shield className="w-3.5 h-3.5 text-indigo-500" />}
                           </div>
                         </td>
                       ))}

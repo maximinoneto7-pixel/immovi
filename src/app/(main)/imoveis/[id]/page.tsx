@@ -16,14 +16,12 @@ import { getVideoEmbedUrl } from '@/lib/video'
 import {
   Bed, Bath, Car, Maximize2, MapPin, Shield, Star, Phone,
   MessageCircle, Heart, Calendar, Eye, CheckCircle2, Pause,
-  Home, BookOpen, Leaf, Users, Video, ExternalLink, BadgeCheck, Clock,
+  Home, BookOpen, Leaf, Users, Video, ExternalLink, Clock,
 } from 'lucide-react'
 import { formatCurrency, formatArea, formatAlqueires, formatDate, isRural, mainArea, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
 import { typeFields } from '@/lib/property-fields'
 import { activityLabel, isOnline } from '@/lib/presence-labels'
 import { responseSpeedFor, responseLabel } from '@/lib/response-time'
-import { COMPANY } from '@/lib/company'
-import { LogoMark } from '@/components/common/Logo'
 import type { Metadata } from 'next'
 
 // Título e texto que aparecem quando alguém compartilha o link (a imagem vem de opengraph-image.tsx)
@@ -82,7 +80,7 @@ export default async function PropertyDetailPage({
         select: {
           // Sem telefone: o contato acontece pelo chat da plataforma
           id: true, name: true, image: true,
-          bio: true, verified: true, createdAt: true, lastSeenAt: true, showActivity: true, official: true,
+          bio: true, verified: true, createdAt: true, lastSeenAt: true, showActivity: true,
           _count: { select: { properties: { where: { status: 'ACTIVE' } }, reviewsReceived: true } },
         },
       },
@@ -266,11 +264,6 @@ export default async function PropertyDetailPage({
               {/* Title + badges */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {property.owner.official && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-full">
-                      <BadgeCheck className="w-3.5 h-3.5" /> Oficial Immovi
-                    </span>
-                  )}
                   <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full">
                     {PROPERTY_TYPES[property.type] || property.type}
                   </span>
@@ -547,34 +540,8 @@ export default async function PropertyDetailPage({
                 />
               )}
 
-              {/* Owner card — conta oficial mostra a empresa responsável */}
-              {property.owner.official ? (
-                <div className="bg-white rounded-2xl border-2 border-indigo-100 shadow-sm p-5 space-y-4">
-                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                    <BadgeCheck className="w-4 h-4 text-indigo-600" />
-                    Anúncio oficial Immovi
-                  </h3>
-                  <div className="flex items-center gap-3">
-                    <LogoMark className="w-14 h-14" />
-                    <div>
-                      <div className="font-semibold text-gray-900">Immovi</div>
-                      <div className="text-xs text-gray-500">{COMPANY.legalName}</div>
-                      <div className="text-xs text-gray-500 whitespace-nowrap">CNPJ {COMPANY.cnpj}</div>
-                    </div>
-                  </div>
-                  <span className="inline-flex px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-full">
-                    Anunciado e atendido pela equipe Immovi
-                  </span>
-                  <ul className="space-y-1.5 text-sm text-gray-700">
-                    {['Empresa identificada, com CNPJ', 'Conversa protegida na plataforma', 'Contrato digital disponível'].map((item) => (
-                      <li key={item} className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" /> {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              {/* Anunciante */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                   <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <Users className="w-4 h-4 text-indigo-500" />
                     Anunciante
@@ -624,8 +591,7 @@ export default async function PropertyDetailPage({
                   >
                     Ver perfil completo
                   </Link>
-                </div>
-              )}
+              </div>
 
               {/* Contato: só para visitantes, e enquanto o imóvel estiver disponível */}
               {!canManage && (isClosed ? (
@@ -636,7 +602,7 @@ export default async function PropertyDetailPage({
                 <ContactForm
                   propertyId={property.id}
                   ownerId={property.owner.id}
-                  ownerName={property.owner.official ? 'Immovi' : property.owner.name}
+                  ownerName={property.owner.name}
                   isLoggedIn={!!session}
                 />
               ))}

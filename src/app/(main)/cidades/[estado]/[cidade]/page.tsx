@@ -51,7 +51,7 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
       take: 12,
       orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
       include: {
-        owner: { select: { id: true, name: true, image: true, verified: true, official: true } },
+        owner: { select: { id: true, name: true, image: true, verified: true } },
         images: { orderBy: { order: 'asc' } },
         features: true,
       },

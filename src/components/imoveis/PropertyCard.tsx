@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Heart, Bed, Bath, Car, MapPin, Maximize2, Shield, Star, ArrowLeftRight, BadgeCheck } from 'lucide-react'
-import { LogoMark } from '@/components/common/Logo'
 import { formatCurrency, formatArea, formatAlqueires, isRural, mainArea, PROPERTY_TYPES, PROPERTY_STATUS } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { getCompareIds, toggleCompareId, COMPARE_EVENT, COMPARE_MAX } from '@/lib/compare'
@@ -34,7 +33,6 @@ interface PropertyCardProps {
       image?: string | null
       verified: boolean
       /** Conta da própria Immovi: anúncio aparece como "Oficial Immovi" */
-      official?: boolean
     }
     images: { url: string; isCover: boolean }[]
   }
@@ -108,7 +106,7 @@ export default function PropertyCard({
     <div
       className={cn(
         'bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200 group',
-        (property.featured || property.owner.official) && 'ring-2 ring-indigo-200',
+        property.featured && 'ring-2 ring-indigo-200',
         className
       )}
     >
@@ -138,9 +136,9 @@ export default function PropertyCard({
           <span className="px-2 py-1 bg-white/95 backdrop-blur text-gray-700 text-xs font-semibold rounded-lg shadow">
             {PROPERTY_TYPES[property.type] || property.type}
           </span>
-          {property.owner.official && (
+          {property.verified && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-lg shadow w-fit">
-              <BadgeCheck className="w-3.5 h-3.5" /> Oficial Immovi
+              <BadgeCheck className="w-3.5 h-3.5" /> Anúncio verificado
             </span>
           )}
           {property.status && property.status !== 'ACTIVE' && (
@@ -258,17 +256,8 @@ export default function PropertyCard({
           )}
         </div>
 
-        {/* Owner — conta oficial mostra a marca da Immovi */}
-        {property.owner.official ? (
-          <div className="pt-3 flex items-center gap-2">
-            <LogoMark className="w-7 h-7" />
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold text-gray-800">Immovi</div>
-              <span className="text-xs font-medium text-indigo-600">Anúncio oficial da plataforma</span>
-            </div>
-          </div>
-        ) : (
-          <div className="pt-3 flex items-center gap-2">
+        {/* Anunciante */}
+        <div className="pt-3 flex items-center gap-2">
             {property.owner.image ? (
               <img
                 src={property.owner.image}
@@ -293,8 +282,7 @@ export default function PropertyCard({
               </div>
               <span className="text-xs text-gray-400">Proprietário</span>
             </div>
-          </div>
-        )}
+        </div>
       </div>
       </Link>
     </div>

@@ -27,7 +27,7 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
     state: currentParams.state || '',
     city: currentParams.city || '',
     bedrooms: currentParams.bedrooms || '',
-    oficial: currentParams.oficial || '',
+    verificado: currentParams.verificado || '',
     minArea: toDisplayArea(currentParams.minArea, currentParams.type),
     maxArea: toDisplayArea(currentParams.maxArea, currentParams.type),
   })
@@ -70,7 +70,7 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
   }
 
   const clearFilters = () => {
-    setFilters({ type: '', listingType: '', minPrice: '', maxPrice: '', state: '', city: '', bedrooms: '', minArea: '', maxArea: '', oficial: '' })
+    setFilters({ type: '', listingType: '', minPrice: '', maxPrice: '', state: '', city: '', bedrooms: '', minArea: '', maxArea: '', verificado: '' })
     setCityInput('')
     router.push('/imoveis')
   }
@@ -97,12 +97,15 @@ export default function FiltersPanel({ currentParams }: FiltersPanelProps) {
       </div>
 
       <div className="px-4">
-        {/* Só anúncios da conta oficial da Immovi */}
-        <label className="flex items-center gap-2 py-4 border-b border-gray-100 cursor-pointer">
-          <input type="checkbox" checked={filters.oficial === '1'}
-            onChange={(e) => setFilters((f) => ({ ...f, oficial: e.target.checked ? '1' : '' }))}
-            className="w-4 h-4 accent-indigo-600" />
-          <span className="text-sm font-semibold text-gray-800">Só anúncios oficiais Immovi</span>
+        {/* Só imóveis com documento conferido */}
+        <label className="flex items-start gap-2 py-4 border-b border-gray-100 cursor-pointer">
+          <input type="checkbox" checked={filters.verificado === '1'}
+            onChange={(e) => setFilters((f) => ({ ...f, verificado: e.target.checked ? '1' : '' }))}
+            className="w-4 h-4 mt-0.5 accent-indigo-600" />
+          <span>
+            <span className="block text-sm font-semibold text-gray-800">Só anúncios verificados</span>
+            <span className="block text-xs text-gray-500">Imóveis cuja matrícula confere com o nome do anunciante</span>
+          </span>
         </label>
 
         {/* Finalidade */}

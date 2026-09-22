@@ -17,7 +17,7 @@ export default async function FavoritosPage() {
     include: {
       property: {
         include: {
-          owner: { select: { id: true, name: true, image: true, verified: true, official: true } },
+          owner: { select: { id: true, name: true, image: true, verified: true } },
           images: { orderBy: { order: 'asc' } },
           features: true,
         },

@@ -24,8 +24,8 @@ interface SearchParams extends Record<string, string | undefined> {
   bedrooms?: string
   page?: string
   featured?: string
-  /** "1" = só anúncios oficiais da Immovi */
-  oficial?: string
+  /** "1" = só anúncios com documento verificado */
+  verificado?: string
 }
 
 async function getProperties(params: SearchParams) {
@@ -34,7 +34,7 @@ async function getProperties(params: SearchParams) {
   const skip = (page - 1) * pageSize
 
   const where: Record<string, unknown> = { status: 'ACTIVE' }
-  if (params.oficial === '1') where.owner = { official: true }
+  if (params.verificado === '1') where.verified = true
 
   if (params.q) {
     where.OR = [
@@ -69,7 +69,7 @@ async function getProperties(params: SearchParams) {
       take: pageSize,
       orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
       include: {
-        owner: { select: { id: true, name: true, image: true, verified: true, official: true } },
+        owner: { select: { id: true, name: true, image: true, verified: true } },
         images: { orderBy: { order: 'asc' } },
         features: true,
       },
@@ -90,7 +90,7 @@ export default async function ImoveisPage({
   const { properties, total, page, totalPages } = await getProperties(params)
   const favoriteIds = await favoriteIdsFor(session?.user?.id, properties.map((p) => p.id))
 
-  const hasFilters = params.q || params.type || params.listingType || params.city || params.state || params.minPrice || params.maxPrice || params.bedrooms || params.oficial
+  const hasFilters = params.q || params.type || params.listingType || params.city || params.state || params.minPrice || params.maxPrice || params.bedrooms || params.verificado
 
   return (
     <>

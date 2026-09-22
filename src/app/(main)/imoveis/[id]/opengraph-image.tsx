@@ -46,7 +46,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
     select: {
       title: true, price: true, rentPrice: true, listingType: true, type: true,
       area: true, builtArea: true, city: true, state: true, status: true,
-      owner: { select: { official: true } },
+      verified: true,
       images: { orderBy: { order: 'asc' }, select: { url: true, isCover: true } },
     },
   })
@@ -126,12 +126,12 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             <div style={{ fontSize: 36, fontWeight: 800, color: '#ffffff', letterSpacing: -1 }}>immovi</div>
           </div>
 
-          {property.owner.official && (
+          {property.verified && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#4f46e5', color: '#ffffff', borderRadius: 12, padding: '10px 18px', fontSize: 26, fontWeight: 800 }}>
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 12.5 9.5 18 20 6" />
               </svg>
-              Oficial Immovi
+              Anúncio verificado
             </div>
           )}
         </div>

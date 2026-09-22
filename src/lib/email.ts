@@ -59,7 +59,7 @@ function layout(content: string, previewText = '') {
           <table width="100%" cellpadding="0" cellspacing="0"><tr>
             <td style="vertical-align:middle;">
               <div style="display:inline-flex;align-items:center;gap:10px;">
-                <div style="width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:10px;display:inline-block;line-height:36px;text-align:center;font-size:18px;">🏠</div>
+                <img src="${BASE_URL}/icon-192.png" width="36" height="36" alt="Immovi" style="width:36px;height:36px;border-radius:10px;display:inline-block;vertical-align:middle;border:0;"/>
                 <span style="color:#fff;font-size:20px;font-weight:bold;">Immo<span style="color:#a5b4fc;">vi</span></span>
               </div>
             </td>

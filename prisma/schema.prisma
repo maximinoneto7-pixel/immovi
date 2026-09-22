@@ -41,7 +41,8 @@ model User {
   // Chat: "online agora" / "visto por último" (showActivity=false esconde e, em troca, não vê o dos outros)
   lastSeenAt    DateTime?
   showActivity  Boolean   @default(true)
-  // Conta da própria Immovi: anúncios aparecem como "Oficial Immovi" (só o admin liga)
+  // Reservado: marcava a conta da própria Immovi. O selo saiu do site (a empresa
+  // só poderia se apresentar como ofertante de imóvel de terceiro com CRECI-J).
   official      Boolean   @default(false)
   // Avisos de baixa de preço nos imóveis favoritados (e-mail e notificação no celular)
   priceAlerts   Boolean   @default(true)
