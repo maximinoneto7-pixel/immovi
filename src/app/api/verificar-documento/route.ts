@@ -46,9 +46,9 @@ export async function POST(request: Request) {
       }, { status: 400 })
     }
 
-    // Limite de 10MB
-    if (file.size > 10 * 1024 * 1024) {
-      return Response.json({ error: 'Arquivo muito grande. Máximo 10MB.' }, { status: 400 })
+    // Limite de 4MB (a Vercel corta requisições acima de 4,5 MB)
+    if (file.size > 4 * 1024 * 1024) {
+      return Response.json({ error: 'Arquivo muito grande. Máximo 4MB.' }, { status: 400 })
     }
 
     // Converter para base64

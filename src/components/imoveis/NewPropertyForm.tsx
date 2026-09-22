@@ -115,7 +115,7 @@ export default function NewPropertyForm({ userId, propertyId, initial }: NewProp
   const handleDocFile = (file: File) => {
     const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
     if (!allowed.includes(file.type)) { setError('Documento: use PDF, JPG, PNG ou WebP.'); return }
-    if (file.size > 10 * 1024 * 1024) { setError('Documento muito grande. Máximo 10MB.'); return }
+    if (file.size > 4 * 1024 * 1024) { setError('Documento muito grande. Máximo 4MB.'); return }
     setDocFile(file)
     setDocResult(null)
     setError('')
@@ -621,7 +621,7 @@ export default function NewPropertyForm({ userId, propertyId, initial }: NewProp
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) handleDocFile(f) }} />
                   <Upload className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                   <p className="text-sm font-semibold text-gray-600">Arraste ou clique para enviar</p>
-                  <p className="text-xs text-gray-400 mt-1">Matrícula, IPTU, Escritura • PDF, JPG, PNG • Máx. 10MB</p>
+                  <p className="text-xs text-gray-400 mt-1">Matrícula, IPTU, Escritura • PDF, JPG, PNG • Máx. 4MB</p>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">

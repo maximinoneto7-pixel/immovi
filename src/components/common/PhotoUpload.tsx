@@ -6,6 +6,7 @@ import {
   ImageIcon, AlertCircle, CheckCircle2, Plus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { shrinkImage } from '@/lib/image-resize'
 
 export interface UploadedPhoto {
   url: string
@@ -55,34 +56,44 @@ export default function PhotoUpload({
     }))
     onChange([...photos, ...previews])
 
+    // Uma foto por envio (a Vercel limita cada envio a 4,5 MB), já reduzida no navegador
+    const uploaded: UploadedPhoto[] = []
+    let failed = 0
+    let lastError = ''
     try {
-      const formData = new FormData()
-      toUpload.forEach(f => formData.append('files', f))
-      formData.append('folder', folder)
+      for (const [i, file] of toUpload.entries()) {
+        try {
+          const formData = new FormData()
+          formData.append('files', await shrinkImage(file))
+          formData.append('folder', folder)
 
-      const res = await fetch('/api/upload', { method: 'POST', body: formData })
-      const data = await res.json()
+          const res = await fetch('/api/upload', { method: 'POST', body: formData })
+          const data = await res.json().catch(() => ({}))
+          if (!res.ok) {
+            throw new Error(data.error || (res.status === 413 ? 'Foto grande demais para enviar.' : 'Erro no upload.'))
+          }
 
-      if (!res.ok) throw new Error(data.error || 'Erro no upload')
+          uploaded.push({
+            url: data.files[0].url,
+            filename: data.files[0].filename,
+            isCover: photos.length === 0 && uploaded.length === 0,
+          })
+        } catch (err: any) {
+          failed++
+          lastError = err.message || 'Falha no upload.'
+        }
+        setUploadProgress(Math.round(((i + 1) / toUpload.length) * 100))
+      }
 
-      // Substitui os previews pelos resultados reais
-      const uploaded: UploadedPhoto[] = data.files.map((f: any, i: number) => ({
-        url: f.url,
-        filename: f.filename,
-        isCover: photos.length === 0 && i === 0,
-      }))
-
-      // Revoga URLs de preview para liberar memória
-      previews.forEach(p => p.localPreview && URL.revokeObjectURL(p.localPreview))
-
+      // Troca os previews pelas fotos enviadas; as que falharam somem da lista
       onChange([...photos, ...uploaded])
-      setUploadProgress(100)
-    } catch (err: any) {
-      // Remove os previews em caso de erro
-      previews.forEach(p => p.localPreview && URL.revokeObjectURL(p.localPreview))
-      onChange(photos)
-      setError(err.message || 'Falha no upload. Tente novamente.')
+      if (failed) {
+        setError(failed === toUpload.length
+          ? lastError
+          : `${failed} de ${toUpload.length} fotos não foram enviadas: ${lastError}`)
+      }
     } finally {
+      previews.forEach(p => p.localPreview && URL.revokeObjectURL(p.localPreview))
       setUploading(false)
       setTimeout(() => setUploadProgress(0), 1000)
     }

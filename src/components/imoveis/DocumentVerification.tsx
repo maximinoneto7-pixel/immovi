@@ -60,8 +60,8 @@ export default function DocumentVerification({
       setError('Formato não suportado. Use PDF, JPG, PNG ou WebP.')
       return
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Arquivo muito grande. Máximo 10MB.')
+    if (file.size > 4 * 1024 * 1024) {
+      setError('Arquivo muito grande. Máximo 4MB.')
       return
     }
     setSelectedFile(file)
@@ -356,7 +356,7 @@ export default function DocumentVerification({
                   <p className="text-sm font-semibold text-gray-600">
                     Arraste ou clique para enviar a matrícula
                   </p>
-                  <p className="text-xs text-gray-400">PDF, JPG, PNG ou WebP • Máx. 10MB</p>
+                  <p className="text-xs text-gray-400">PDF, JPG, PNG ou WebP • Máx. 4MB</p>
                 </div>
               )}
             </div>

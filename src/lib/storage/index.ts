@@ -1,15 +1,18 @@
 import { writeFile, mkdir } from 'fs/promises'
+import { put } from '@vercel/blob'
 import { existsSync } from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 
 // ─── Configuração do provider ─────────────────────────────────────────────────
-// Para migrar para Cloudflare R2 no futuro, basta implementar uploadToR2()
-// e trocar a linha no final desta função.
+// Produção (Vercel): Vercel Blob — a pasta do servidor é só leitura lá.
+// Local: grava em public/uploads. O Blob entra sozinho quando a Vercel injeta
+// a credencial do armazenamento conectado ao projeto.
 
-export type StorageProvider = 'local' | 'r2' | 's3'
+export type StorageProvider = 'local' | 'blob' | 'r2' | 's3'
 
-const PROVIDER: StorageProvider = (process.env.STORAGE_PROVIDER as StorageProvider) || 'local'
+const PROVIDER: StorageProvider = (process.env.STORAGE_PROVIDER as StorageProvider)
+  || (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID ? 'blob' : 'local')
 const LOCAL_UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads')
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
@@ -36,6 +39,8 @@ export function validateFile(file: File): string | null {
 // ─── Upload Local ─────────────────────────────────────────────────────────────
 
 async function uploadToLocal(buffer: Buffer, originalName: string, folder: string): Promise<UploadResult> {
+  // Na Vercel a pasta do servidor é só leitura: sem o Blob conectado, avisa em vez de dar erro de sistema
+  if (process.env.VERCEL) throw new Error('O envio de fotos está indisponível no momento. Tente novamente em instantes.')
   const dir = path.join(LOCAL_UPLOAD_DIR, folder)
   if (!existsSync(dir)) await mkdir(dir, { recursive: true })
 
@@ -53,6 +58,15 @@ async function uploadToLocal(buffer: Buffer, originalName: string, folder: strin
     size: buffer.length,
     provider: 'local',
   }
+}
+
+// ─── Upload Vercel Blob ───────────────────────────────────────────────────────
+
+async function uploadToBlob(buffer: Buffer, originalName: string, folder: string, contentType: string): Promise<UploadResult> {
+  const ext = path.extname(originalName).toLowerCase() || '.jpg'
+  const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`
+  const blob = await put(`${folder}/${filename}`, buffer, { access: 'public', contentType })
+  return { url: blob.url, filename, size: buffer.length, provider: 'blob' }
 }
 
 // ─── Upload Cloudflare R2 (ativar no futuro) ──────────────────────────────────
@@ -84,6 +98,7 @@ export async function uploadFile(
   const buffer = Buffer.from(bytes)
 
   switch (PROVIDER) {
+    case 'blob': return uploadToBlob(buffer, file.name, folder, file.type || 'image/jpeg')
     case 'r2':  return uploadToR2(buffer, file.name, folder)
     case 'local':
     default:    return uploadToLocal(buffer, file.name, folder)

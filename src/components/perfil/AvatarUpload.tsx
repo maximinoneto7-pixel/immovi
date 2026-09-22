@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { Camera, Loader2, X } from 'lucide-react'
+import { shrinkImage } from '@/lib/image-resize'
 
 interface AvatarUploadProps {
   name: string
@@ -24,7 +25,7 @@ export default function AvatarUpload({ name, initialUrl, fallbackLetter }: Avata
 
     try {
       const formData = new FormData()
-      formData.append('files', file)
+      formData.append('files', await shrinkImage(file, 800))
       formData.append('folder', 'avatars')
 
       const res = await fetch('/api/upload', { method: 'POST', body: formData })
