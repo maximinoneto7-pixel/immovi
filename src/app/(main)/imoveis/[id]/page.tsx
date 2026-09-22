@@ -16,7 +16,7 @@ import { getVideoEmbedUrl } from '@/lib/video'
 import {
   Bed, Bath, Car, Maximize2, MapPin, Shield, Star, Phone,
   MessageCircle, Heart, Calendar, Eye, CheckCircle2, Pause,
-  Home, BookOpen, Leaf, Users, Video, ExternalLink, Clock,
+  Home, BookOpen, Leaf, Users, Video, ExternalLink, Clock, BadgeCheck,
 } from 'lucide-react'
 import { formatCurrency, formatArea, formatAlqueires, formatDate, isRural, mainArea, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
 import { typeFields } from '@/lib/property-fields'
@@ -608,6 +608,23 @@ export default async function PropertyDetailPage({
               ))}
 
               <ListingActions propertyId={property.id} title={property.title} isFavorited={isFavorited} />
+
+              {/* O que o selo de verificado promete — e o que ele não promete */}
+              {property.verified && (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                  <div className="flex items-start gap-3">
+                    <BadgeCheck className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900 mb-1">O que “anúncio verificado” quer dizer</div>
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        A matrícula enviada pelo anunciante confere com o nome dele. Não inclui vistoria no imóvel
+                        nem consulta de ônus, dívidas ou processos: isso continua sendo conferido na certidão
+                        atualizada do cartório, antes de fechar negócio.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Security badge */}
               <div className="bg-indigo-50 rounded-2xl border border-indigo-100 p-4">
