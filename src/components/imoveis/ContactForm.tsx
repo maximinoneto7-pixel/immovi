@@ -2,13 +2,12 @@
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
-import { MessageCircle, Phone, Calendar, Send, Shield, AlertCircle } from 'lucide-react'
+import { MessageCircle, Calendar, Send, Shield, AlertCircle } from 'lucide-react'
 
 interface ContactFormProps {
   propertyId: string
   ownerId: string
   ownerName: string
-  ownerPhone?: string | null
   isLoggedIn: boolean
 }
 
@@ -16,7 +15,6 @@ export default function ContactForm({
   propertyId,
   ownerId,
   ownerName,
-  ownerPhone,
   isLoggedIn,
 }: ContactFormProps) {
   const [message, setMessage] = useState('')
@@ -149,18 +147,6 @@ export default function ContactForm({
         <Send className="w-4 h-4" />
         {loading ? 'Enviando...' : 'Enviar mensagem'}
       </button>
-
-      {ownerPhone && (
-        <a
-          href={`https://wa.me/55${ownerPhone.replace(/\D/g, '')}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm"
-        >
-          <Phone className="w-4 h-4 text-green-500" />
-          WhatsApp
-        </a>
-      )}
 
       {/* Preenche o pedido de visita e deixa pronto para enviar */}
       <button

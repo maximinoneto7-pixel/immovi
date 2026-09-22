@@ -34,7 +34,8 @@ export default async function PropertyDetailPage({
     include: {
       owner: {
         select: {
-          id: true, name: true, email: true, image: true, phone: true,
+          // Sem telefone: o contato acontece pelo chat da plataforma
+          id: true, name: true, image: true,
           bio: true, verified: true, createdAt: true,
           _count: { select: { properties: { where: { status: 'ACTIVE' } }, reviewsReceived: true } },
         },
@@ -539,7 +540,6 @@ export default async function PropertyDetailPage({
                   propertyId={property.id}
                   ownerId={property.owner.id}
                   ownerName={property.owner.name}
-                  ownerPhone={property.owner.phone}
                   isLoggedIn={!!session}
                 />
               ))}
