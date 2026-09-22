@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Scale, X } from 'lucide-react'
+import { ArrowLeftRight, X } from 'lucide-react'
 import { getCompareIds, clearCompare, COMPARE_EVENT, COMPARE_MAX } from '@/lib/compare'
 
 export default function CompareBar() {
@@ -25,7 +25,7 @@ export default function CompareBar() {
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-gray-900 text-white rounded-2xl shadow-xl px-4 py-3 flex items-center gap-4">
       <div className="flex items-center gap-2 text-sm font-medium">
-        <Scale className="w-4 h-4 text-indigo-400" />
+        <ArrowLeftRight className="w-4 h-4 text-indigo-400" />
         {ids.length} de {COMPARE_MAX} selecionado{ids.length !== 1 ? 's' : ''}
       </div>
       <button

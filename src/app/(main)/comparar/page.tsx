@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { formatCurrency, formatArea, isRural, mainArea, M2_PER_HECTARE, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
-import { Scale, Shield, Star, CheckCircle2, XCircle, MapPin } from 'lucide-react'
+import { ArrowLeftRight, Shield, Star, CheckCircle2, XCircle, MapPin } from 'lucide-react'
 
 export default async function CompararPage({
   searchParams,
@@ -41,14 +41,14 @@ export default async function CompararPage({
       <main className="flex-1 bg-gray-50 pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center gap-2 text-indigo-600 text-sm font-semibold mb-1">
-            <Scale className="w-4 h-4" />
+            <ArrowLeftRight className="w-4 h-4" />
             Comparador de imóveis
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Comparar imóveis</h1>
 
           {ordered.length < 2 ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-              <Scale className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <ArrowLeftRight className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <h2 className="text-lg font-semibold text-gray-900 mb-2">Selecione pelo menos 2 imóveis</h2>
               <p className="text-sm text-gray-500 max-w-sm mx-auto mb-6">
                 Navegue pelos anúncios e clique em <strong>"Comparar"</strong> no card de cada imóvel
@@ -76,7 +76,7 @@ export default async function CompararPage({
                                   <img src={cover.url} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                    <Scale className="w-8 h-8" />
+                                    <ArrowLeftRight className="w-8 h-8" />
                                   </div>
                                 )}
                               </div>

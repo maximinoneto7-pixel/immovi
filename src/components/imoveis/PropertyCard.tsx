@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Heart, Bed, Bath, Car, MapPin, Maximize2, Shield, Star, Scale } from 'lucide-react'
+import { Heart, Bed, Bath, Car, MapPin, Maximize2, Shield, Star, ArrowLeftRight } from 'lucide-react'
 import { formatCurrency, formatArea, formatAlqueires, isRural, mainArea, PROPERTY_TYPES, PROPERTY_STATUS } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { getCompareIds, toggleCompareId, COMPARE_EVENT, COMPARE_MAX } from '@/lib/compare'
@@ -185,7 +185,7 @@ export default function PropertyCard({
           )}
           aria-label={isComparing ? 'Remover do comparador' : 'Adicionar ao comparador'}
         >
-          <Scale className="w-3.5 h-3.5" />
+          <ArrowLeftRight className="w-3.5 h-3.5" />
           {isComparing ? 'Comparando' : 'Comparar'}
         </button>
       </div>

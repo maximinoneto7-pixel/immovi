@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Scale } from 'lucide-react'
+import { ArrowLeftRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getCompareIds, toggleCompareId, COMPARE_EVENT } from '@/lib/compare'
 
@@ -35,7 +35,7 @@ export default function CompareToggleButton({ propertyId }: { propertyId: string
           : 'border-gray-200 text-gray-700 hover:bg-gray-50'
       )}
     >
-      <Scale className="w-4 h-4" />
+      <ArrowLeftRight className="w-4 h-4" />
       {isComparing ? 'Comparando' : 'Comparar'}
     </button>
   )

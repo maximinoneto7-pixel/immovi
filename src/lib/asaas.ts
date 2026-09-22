@@ -2,7 +2,7 @@
 // Documentação: https://docs.asaas.com/reference
 
 const ASAAS_BASE_URL = process.env.ASAAS_ENVIRONMENT === 'production'
-  ? 'https://api.asaas.com/api/v3'
+  ? 'https://api.asaas.com/v3' // "/api/v3" responde 404 em produção
   : 'https://sandbox.asaas.com/api/v3'
 
 export function getAsaasClient() {
