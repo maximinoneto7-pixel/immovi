@@ -50,7 +50,7 @@ export default async function DocumentosPage() {
       <Header user={session.user as any} />
       <main className="flex-1 bg-gray-50 pb-16">
         {/* Hero */}
-        <section className="bg-gradient-to-br from-indigo-900 to-indigo-700 text-white py-10">
+        <section className="bg-gradient-to-br from-gray-900 to-indigo-900 text-white py-10">
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center">

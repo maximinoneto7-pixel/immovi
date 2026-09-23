@@ -30,7 +30,7 @@ export default async function PrivacidadePage() {
       <Header user={session?.user as any} />
       <main className="flex-1 bg-gray-50">
         {/* Hero */}
-        <section className="bg-gradient-to-br from-indigo-900 to-indigo-700 text-white py-12">
+        <section className="bg-gradient-to-br from-gray-900 to-indigo-900 text-white py-12">
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex items-center gap-3 mb-3">
               <Shield className="w-8 h-8 text-indigo-300" />

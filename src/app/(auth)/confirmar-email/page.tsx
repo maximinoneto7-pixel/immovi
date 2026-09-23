@@ -20,7 +20,7 @@ export default async function ConfirmarEmailPage({
 
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-700 text-white flex-col items-center justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-gray-900 to-indigo-900 text-white flex-col items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-5 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white to-transparent" />
         <div className="relative text-center max-w-sm">
           <Logo tone="brand" size="lg" className="justify-center mb-8" />
@@ -30,7 +30,7 @@ export default async function ConfirmarEmailPage({
           </p>
           <div className="mt-8 flex items-center gap-2 text-indigo-200 text-sm justify-center">
             <Shield className="w-4 h-4" />
-            <span>Plataforma segura e verificada</span>
+            <span>Negocie direto, sem comissão obrigatória</span>
           </div>
         </div>
       </div>

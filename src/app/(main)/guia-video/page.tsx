@@ -139,7 +139,7 @@ export default async function GuiaVideoPage() {
       <Header user={session?.user as any} />
       <main className="flex-1">
         {/* Hero */}
-        <section className="bg-gradient-to-br from-gray-900 via-indigo-900 to-indigo-800 text-white py-16">
+        <section className="bg-gradient-to-br from-gray-900 to-indigo-900 text-white py-16">
           <div className="max-w-4xl mx-auto px-4 text-center">
             <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <Video className="w-9 h-9 text-indigo-300" />

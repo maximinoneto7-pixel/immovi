@@ -25,7 +25,7 @@ export default async function PlanosPage() {
       <Header user={session?.user as any} />
       <main className="flex-1 bg-gray-50">
         {/* Hero */}
-        <section className="bg-gradient-to-br from-indigo-900 to-indigo-700 text-white py-16 text-center">
+        <section className="bg-gradient-to-br from-gray-900 to-indigo-900 text-white py-16 text-center">
           <div className="max-w-3xl mx-auto px-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-sm font-medium mb-4">
               <Zap className="w-4 h-4 text-amber-400" />

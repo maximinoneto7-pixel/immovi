@@ -61,7 +61,7 @@ export default function CadastroPage() {
   return (
     <div className="min-h-screen flex">
       {/* Painel esquerdo */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-700 text-white flex-col items-center justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-gray-900 to-indigo-900 text-white flex-col items-center justify-center p-12 relative overflow-hidden">
         <div className="relative text-center max-w-sm">
           <Logo tone="brand" size="lg" className="justify-center mb-8" />
           <h2 className="text-3xl font-bold mb-4">

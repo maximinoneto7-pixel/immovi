@@ -80,21 +80,17 @@ export default async function HomePage() {
 
       <main className="flex-1">
         {/* HERO */}
-        <section className="relative bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-700 text-white overflow-hidden">
+        <section className="relative bg-gradient-to-br from-gray-900 to-indigo-900 text-white overflow-hidden">
           <div className="absolute inset-0 opacity-5 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 pb-28 sm:pb-36">
             <div className="text-center max-w-3xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur rounded-full text-sm font-medium text-indigo-100 mb-6">
-                <Shield className="w-4 h-4" />
-                Plataforma 100% Verificada e Segura
-              </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
                 Encontre seu imóvel com{' '}
                 <span className="text-amber-400">história e confiança</span>
               </h1>
               <p className="text-lg sm:text-xl text-indigo-100 mb-10 leading-relaxed">
                 Conectamos compradores e vendedores diretamente, com transparência e humanidade.
-                Sem intermediários desnecessários, com perfis verificados e negociações seguras.
+                Sem comissão obrigatória, com a conversa registrada e o contrato pronto na plataforma.
               </p>
               <SearchBar className="max-w-3xl mx-auto" />
               {/* No celular, três colunas compactas; do tablet em diante, a faixa com divisórias */}
@@ -236,7 +232,7 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { step: '1', icon: Home, title: 'Anuncie ou Busque', desc: 'Cadastre seu imóvel com fotos e a história do lugar — ou busque o imóvel dos seus sonhos com filtros avançados.' },
-              { step: '2', icon: MessageCircle, title: 'Conecte-se', desc: 'Entre em contato diretamente com o proprietário pelo chat seguro da plataforma. Tire dúvidas, agende visitas.' },
+              { step: '2', icon: MessageCircle, title: 'Conecte-se', desc: 'Entre em contato diretamente com o proprietário pelo chat seguro da plataforma. Tire dúvidas, agende visitas.', extra: { texto: 'Quando o anunciante envia a matrícula e ela confere com o nome dele, o anúncio ganha o selo de verificado.', link: '/imoveis?verificado=1', chamada: 'Ver só os verificados' } },
               { step: '3', icon: Handshake, title: 'Feche com Segurança', desc: 'Assinantes geram contratos de compra e venda, locação, permuta ou cessão de direitos, prontos para imprimir e assinar.' },
             ].map((item, i) => (
               <ScrollReveal key={item.step} delay={i * 100}>
@@ -251,6 +247,14 @@ export default async function HomePage() {
                   </div>
                   <h3 className="font-semibold text-gray-900 text-lg mb-2">{item.title}</h3>
                   <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">{item.desc}</p>
+                  {item.extra && (
+                    <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto mt-2">
+                      {item.extra.texto}{' '}
+                      <Link href={item.extra.link} className="text-indigo-600 font-semibold whitespace-nowrap hover:underline">
+                        {item.extra.chamada} →
+                      </Link>
+                    </p>
+                  )}
                 </div>
               </ScrollReveal>
             ))}

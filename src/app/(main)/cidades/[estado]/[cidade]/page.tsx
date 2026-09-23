@@ -10,24 +10,44 @@ import { MapPin, Home, TrendingUp, ChevronRight } from 'lucide-react'
 import { formatCurrency, PROPERTY_TYPES } from '@/lib/utils'
 import type { Metadata } from 'next'
 
-function slugToCity(slug: string) {
-  return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-}
-
 function cityToSlug(city: string) {
   return city.toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/\s+/g, '-')
 }
 
+/** "IVOLÂNDIA" → "Ivolândia"; "SANTO ANTÔNIO DE GOIÁS" → "Santo Antônio de Goiás" */
+const MINUSCULAS = new Set(['de', 'da', 'do', 'das', 'dos', 'e'])
+function nomeDaCidade(city: string) {
+  return city.toLocaleLowerCase('pt-BR').split(/\s+/)
+    .map((w, i) => (i > 0 && MINUSCULAS.has(w) ? w : w.charAt(0).toLocaleUpperCase('pt-BR') + w.slice(1)))
+    .join(' ')
+}
+
+/**
+ * O endereço traz a cidade sem acento e em minúsculas (é o que o sitemap publica),
+ * enquanto o banco guarda como a pessoa digitou. Procuramos a cidade do estado cujo
+ * apelido bate com o do endereço — sem isso, toda cidade com acento caía em 404.
+ */
+async function acharCidade(uf: string, slug: string) {
+  const cidades = await prisma.property.findMany({
+    where: { status: 'ACTIVE', state: uf },
+    select: { city: true },
+    distinct: ['city'],
+  })
+  return cidades.find((c) => cityToSlug(c.city) === slug)?.city ?? null
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ estado: string; cidade: string }> }): Promise<Metadata> {
   const { estado, cidade } = await params
-  const cityName = slugToCity(cidade)
   const uf = estado.toUpperCase()
+  const encontrada = await acharCidade(uf, cidade)
+  if (!encontrada) return { title: 'Cidade não encontrada | Immovi' }
+  const cityName = nomeDaCidade(encontrada)
 
   return {
     title: `Imóveis em ${cityName}/${uf} — Comprar, Vender e Alugar | Immovi`,
-    description: `Encontre casas, apartamentos, terrenos e fazendas em ${cityName}/${uf}. Anúncios verificados com contato direto com proprietários e corretores.`,
+    description: `Encontre casas, apartamentos, terrenos e fazendas em ${cityName}/${uf}. Fale direto com o proprietário, sem comissão obrigatória.`,
     openGraph: {
       title: `Imóveis em ${cityName}/${uf}`,
       description: `Busque imóveis para comprar ou alugar em ${cityName}/${uf} no Immovi.`,
@@ -38,15 +58,17 @@ export async function generateMetadata({ params }: { params: Promise<{ estado: s
 export default async function CidadePage({ params }: { params: Promise<{ estado: string; cidade: string }> }) {
   const { estado, cidade } = await params
   const session = await auth()
-  const cityName = slugToCity(cidade)
   const uf = estado.toUpperCase()
+  const encontrada = await acharCidade(uf, cidade)
+  if (!encontrada) notFound()
+  const cityName = nomeDaCidade(encontrada)
 
   const [properties, stats, types, urbanArea] = await Promise.all([
     prisma.property.findMany({
       where: {
         status: 'ACTIVE',
         state: uf,
-        city: { contains: cityName },
+        city: encontrada,
       },
       take: 12,
       orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
@@ -57,7 +79,7 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
       },
     }),
     prisma.property.aggregate({
-      where: { status: 'ACTIVE', state: uf, city: { contains: cityName } },
+      where: { status: 'ACTIVE', state: uf, city: encontrada },
       _count: { _all: true },
       _avg: { price: true },
       _min: { price: true },
@@ -65,14 +87,14 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
     }),
     prisma.property.groupBy({
       by: ['type'],
-      where: { status: 'ACTIVE', state: uf, city: { contains: cityName } },
+      where: { status: 'ACTIVE', state: uf, city: encontrada },
       _count: { _all: true },
       orderBy: { _count: { type: 'desc' } },
       take: 5,
     }),
     // Área média só com urbanos: uma fazenda em hectares distorceria a média da cidade
     prisma.property.aggregate({
-      where: { status: 'ACTIVE', state: uf, city: { contains: cityName }, type: { not: 'FARM' } },
+      where: { status: 'ACTIVE', state: uf, city: encontrada, type: { not: 'FARM' } },
       _avg: { area: true },
     }),
   ])
@@ -88,7 +110,7 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
       <Header user={session?.user as any} />
       <main className="flex-1 bg-gray-50">
         {/* Hero SEO */}
-        <section className="bg-gradient-to-br from-indigo-900 to-indigo-700 text-white py-12">
+        <section className="bg-gradient-to-br from-gray-900 to-indigo-900 text-white py-12">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex items-center gap-2 text-indigo-300 text-sm mb-3">
               <Link href="/imoveis" className="hover:text-white">Imóveis</Link>
@@ -162,7 +184,7 @@ export default async function CidadePage({ params }: { params: Promise<{ estado:
             <p>
               O Immovi conecta você diretamente com proprietários e corretores de imóveis em{' '}
               <strong>{cityName}</strong>, no estado de <strong>{uf}</strong>.
-              São {total} anúncios verificados de casas, apartamentos, terrenos, fazendas e imóveis comerciais.
+              São {total} anúncios com contato direto de casas, apartamentos, terrenos, fazendas e imóveis comerciais.
             </p>
             <p>
               O preço médio dos imóveis em {cityName}/{uf} é de <strong>{avgPrice > 0 ? formatCurrency(avgPrice) : 'não disponível'}</strong>.

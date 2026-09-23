@@ -88,7 +88,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           {/* CTA */}
           <div className="mt-10 p-6 bg-indigo-50 border border-indigo-100 rounded-2xl text-center">
             <h3 className="font-bold text-gray-900 mb-2">Pronto para dar o próximo passo?</h3>
-            <p className="text-gray-500 text-sm mb-4">Busque imóveis verificados ou anuncie o seu gratuitamente.</p>
+            <p className="text-gray-500 text-sm mb-4">Busque imóveis e fale direto com o dono, ou anuncie o seu de graça.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/imoveis" className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition-colors">
                 Buscar imóveis

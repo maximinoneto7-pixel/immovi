@@ -32,7 +32,7 @@ export default async function TermosPage() {
       <Header user={session?.user as any} />
       <main className="flex-1 bg-gray-50">
         {/* Hero */}
-        <section className="bg-gradient-to-br from-gray-900 to-gray-700 text-white py-12">
+        <section className="bg-gradient-to-br from-gray-900 to-indigo-900 text-white py-12">
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex items-center gap-3 mb-3">
               <FileText className="w-8 h-8 text-gray-300" />

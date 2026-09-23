@@ -16,7 +16,7 @@ export default async function AvaliarPage() {
     <>
       <Header user={session?.user as any} />
       <main className="flex-1 bg-gray-50">
-        <section className="bg-gradient-to-br from-indigo-900 to-indigo-700 text-white py-14">
+        <section className="bg-gradient-to-br from-gray-900 to-indigo-900 text-white py-14">
           <div className="max-w-2xl mx-auto px-4 text-center">
             <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <TrendingUp className="w-7 h-7 text-indigo-200" />
