@@ -4,6 +4,11 @@ import Footer from '@/components/layout/Footer'
 import { auth } from '@/lib/auth'
 import { FileText, ChevronRight } from 'lucide-react'
 
+export const metadata = {
+  title: 'Termos de uso | Immovi',
+  description: 'As regras de uso da plataforma Immovi.',
+}
+
 const ULTIMA_ATUALIZACAO = '25 de junho de 2026'
 
 const sections = [

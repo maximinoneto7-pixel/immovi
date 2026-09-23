@@ -98,7 +98,7 @@ export default async function AdminPage() {
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Link href="/admin/usuarios" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <Users className="w-4 h-4" /> Usuários
               </Link>

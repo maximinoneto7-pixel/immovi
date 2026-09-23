@@ -6,6 +6,11 @@ import Footer from '@/components/layout/Footer'
 import { formatCurrency, formatArea, isRural, mainArea, M2_PER_HECTARE, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
 import { ArrowLeftRight, Shield, Star, CheckCircle2, XCircle, MapPin } from 'lucide-react'
 
+export const metadata = {
+  title: 'Comparar imóveis | Immovi',
+  description: 'Coloque até quatro imóveis lado a lado e compare preço, área e características.',
+}
+
 export default async function CompararPage({
   searchParams,
 }: {

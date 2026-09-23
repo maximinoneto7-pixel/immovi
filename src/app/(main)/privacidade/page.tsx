@@ -4,6 +4,11 @@ import Footer from '@/components/layout/Footer'
 import { auth } from '@/lib/auth'
 import { Shield, ChevronRight } from 'lucide-react'
 
+export const metadata = {
+  title: 'Política de privacidade | Immovi',
+  description: 'Como a Immovi trata os seus dados, conforme a LGPD.',
+}
+
 const ULTIMA_ATUALIZACAO = '22 de setembro de 2026'
 
 const sections = [

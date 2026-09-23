@@ -5,6 +5,11 @@ import Footer from '@/components/layout/Footer'
 import ReferralPanel from '@/components/common/ReferralPanel'
 import { Gift, Users, Crown, CheckCircle2 } from 'lucide-react'
 
+export const metadata = {
+  title: 'Indique e ganhe | Immovi',
+  description: 'Convide alguém para a Immovi e ganhe crédito quando a pessoa anunciar.',
+}
+
 export default async function IndicarPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login?redirect=/indicar')

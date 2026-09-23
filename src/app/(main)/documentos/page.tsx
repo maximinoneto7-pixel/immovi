@@ -12,6 +12,11 @@ import {
 } from 'lucide-react'
 import { PROPERTY_TYPES } from '@/lib/utils'
 
+export const metadata = {
+  title: 'Verificação de documentos | Immovi',
+  description: 'Envie a matrícula do imóvel e ganhe o selo de anúncio verificado.',
+}
+
 export default async function DocumentosPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login?redirect=/documentos')

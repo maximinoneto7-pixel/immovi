@@ -7,6 +7,11 @@ import { PLANOS } from '@/lib/stripe'
 import { CheckCircle2, Zap, Shield, Building2 } from 'lucide-react'
 import { sincronizarPagamentos } from '@/lib/asaas-sync'
 
+export const metadata = {
+  title: 'Planos para anunciar | Immovi',
+  description: 'Do anúncio gratuito ao plano para imobiliárias. Sem fidelidade, cancele quando quiser.',
+}
+
 export default async function PlanosPage() {
   const session = await auth()
 

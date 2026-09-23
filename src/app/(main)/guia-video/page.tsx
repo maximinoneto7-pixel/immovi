@@ -8,6 +8,11 @@ import {
   Eye, RotateCw, ChevronRight,
 } from 'lucide-react'
 
+export const metadata = {
+  title: 'Guia de vídeo do imóvel | Immovi',
+  description: 'Sete passos para filmar seu imóvel e mostrar o lugar como ele é.',
+}
+
 export default async function GuiaVideoPage() {
   const session = await auth()
 

@@ -153,8 +153,8 @@ export default async function AdminAsaasPage() {
                     No Asaas: <strong>Configurações → Integrações → Webhooks → Adicionar</strong>
                   </p>
                   <div className="space-y-2 text-sm">
-                    <div className="bg-gray-50 rounded-xl p-3 font-mono text-xs">
-                      URL: https://SEU_DOMINIO/api/asaas/webhook
+                    <div className="bg-gray-50 rounded-xl p-3 font-mono text-xs break-all">
+                      URL: https://www.immovi.com.br/api/asaas/webhook
                     </div>
                     <p className="text-xs text-gray-500">Eventos necessários:</p>
                     <div className="bg-gray-50 rounded-xl p-3 font-mono text-xs text-gray-700 space-y-0.5">

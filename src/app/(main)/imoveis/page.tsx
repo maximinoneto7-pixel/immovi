@@ -11,6 +11,11 @@ import CompareBar from '@/components/imoveis/CompareBar'
 import { SlidersHorizontal, Search, MapPin } from 'lucide-react'
 import { PROPERTY_TYPES, STATES } from '@/lib/utils'
 
+export const metadata = {
+  title: 'Imóveis à venda e para alugar | Immovi',
+  description: 'Busque casas, apartamentos, terrenos e fazendas e fale direto com o proprietário, sem comissão obrigatória.',
+}
+
 interface SearchParams extends Record<string, string | undefined> {
   q?: string
   type?: string
