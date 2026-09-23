@@ -298,7 +298,7 @@ export default async function PropertyDetailPage({
                 </div>
 
                 {/* Price */}
-                <div className="flex items-end gap-3 mb-4 pb-4 border-b border-gray-100">
+                <div className="flex flex-wrap items-end gap-x-3 gap-y-2 mb-4 pb-4 border-b border-gray-100">
                   <div>
                     <span className="text-3xl font-bold text-gray-900">
                       {formatCurrency(displayPrice)}
@@ -310,15 +310,15 @@ export default async function PropertyDetailPage({
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-400 ml-auto">
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-4 h-4" /> {property.views} {property.views === 1 ? 'visualização' : 'visualizações'}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400 sm:ml-auto">
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <Eye className="w-4 h-4 flex-shrink-0" /> {property.views} {property.views === 1 ? 'visualização' : 'visualizações'}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Heart className="w-4 h-4" /> {property._count.favorites}
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <Heart className="w-4 h-4 flex-shrink-0" /> {property._count.favorites}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" /> {formatDate(property.createdAt)}
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <Calendar className="w-4 h-4 flex-shrink-0" /> {formatDate(property.createdAt)}
                     </span>
                   </div>
                 </div>
