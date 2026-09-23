@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { sendPaymentOverdueEmail } from '@/lib/email'
-import { addDays, addMonths } from 'date-fns'
+import { getAsaasClient, isAsaasConfigured } from '@/lib/asaas'
+import { ativarPagamento } from '@/lib/asaas-activation'
 
 export const maxDuration = 60
 
@@ -8,12 +9,14 @@ export const maxDuration = 60
 // Documentação: https://docs.asaas.com/reference/webhook
 
 export async function POST(request: Request) {
-  // Verificar token de autenticação do webhook (configurado no painel Asaas)
+  // A senha combinada no painel do Asaas identifica o remetente. Quando ela não bate,
+  // o evento não é recusado de imediato: nada é liberado sem antes conferir a cobrança
+  // no próprio Asaas (ver confirmarNoAsaas), então um evento forjado não ativa nada.
   const authToken = request.headers.get('asaas-webhook-token') ||
                     request.headers.get('access_token')
-
-  if (process.env.ASAAS_WEBHOOK_TOKEN && authToken !== process.env.ASAAS_WEBHOOK_TOKEN) {
-    return Response.json({ error: 'Token inválido.' }, { status: 401 })
+  const senhaConfere = !process.env.ASAAS_WEBHOOK_TOKEN || authToken === process.env.ASAAS_WEBHOOK_TOKEN
+  if (!senhaConfere) {
+    console.warn('[Asaas Webhook] senha do webhook não confere; o evento só vale se o Asaas confirmar')
   }
 
   let event: any
@@ -33,14 +36,13 @@ export async function POST(request: Request) {
       // ── Pagamento confirmado (PIX instantâneo ou cartão) ──────────────
       case 'PAYMENT_RECEIVED':
       case 'PAYMENT_CONFIRMED': {
-        if (!payment?.externalReference) break
-
-        // Formato: userId:planId  OU  boost:propertyId:boostType:userId
-        if (payment.externalReference.startsWith('boost:')) {
-          await handleBoostPayment(payment)
-        } else {
-          await handleSubscriptionPayment(payment)
+        if (!payment?.id) break
+        const confirmado = await confirmarNoAsaas(payment)
+        if (!confirmado) {
+          console.warn(`[Asaas Webhook] cobrança ${payment.id} não consta como paga; ignorado`)
+          break
         }
+        await ativarPagamento(confirmado)
         break
       }
 
@@ -53,6 +55,10 @@ export async function POST(request: Request) {
       case 'PAYMENT_OVERDUE': {
         const ref = payment?.externalReference
         if (!ref) break
+        if (!(await venceuMesmo(payment))) {
+          console.warn(`[Asaas Webhook] cobrança ${payment?.id} não consta como vencida; ignorado`)
+          break
+        }
 
         if (!ref.startsWith('boost:')) {
           const [userId, planId] = ref.split(':')
@@ -80,6 +86,10 @@ export async function POST(request: Request) {
       case 'SUBSCRIPTION_DELETED': {
         const subscriptionId = event.subscription?.id || payment?.subscription
         if (!subscriptionId) break
+        if (!(await sumiuDoAsaas(subscriptionId))) {
+          console.warn(`[Asaas Webhook] assinatura ${subscriptionId} continua ativa no Asaas; ignorado`)
+          break
+        }
 
         const sub = await prisma.subscription.findFirst({
           where: { stripeSubscriptionId: subscriptionId },
@@ -111,73 +121,43 @@ export async function POST(request: Request) {
 
 // ─── Handlers internos ────────────────────────────────────────────────────────
 
-async function handleSubscriptionPayment(payment: any) {
-  const [userId, planId] = (payment.externalReference as string).split(':')
-  if (!userId || !planId) return
+const PAGOS = ['CONFIRMED', 'RECEIVED', 'RECEIVED_IN_CASH']
 
-  const expiresAt = addMonths(new Date(), 1)
-
-  await prisma.subscription.create({
-    data: {
-      plan: planId,
-      status: 'ACTIVE',
-      stripeSubscriptionId: payment.subscription || payment.id,
-      stripeInvoiceId: payment.id,
-      amountPaid: payment.value,
-      expiresAt,
-      userId,
-    },
-  })
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { planId, planExpiresAt: expiresAt },
-  })
-
-  console.log(`✅ Plano ativado: ${planId} para ${userId}`)
+/** O plano só é suspenso se o Asaas também disser que a cobrança venceu */
+async function venceuMesmo(payment: any) {
+  if (!payment?.id || !isAsaasConfigured()) return false
+  try {
+    const cobranca = await getAsaasClient().payments.get(payment.id)
+    return cobranca.status === 'OVERDUE'
+  } catch {
+    return false
+  }
 }
 
-async function handleBoostPayment(payment: any) {
-  // formato: boost:propertyId:boostType:userId
-  const [, propertyId, boostType, userId] = (payment.externalReference as string).split(':')
-  if (!propertyId || !boostType || !userId) return
-
-  const days = parseInt(boostType.replace('FOGUETE_', ''))
-  const expiresAt = addDays(new Date(), days)
-
-  // Atualiza o boost pendente ou cria um novo
-  const existing = await prisma.propertyBoost.findFirst({
-    where: {
-      propertyId,
-      userId,
-      boostType,
-      status: 'PENDING',
-    },
-  })
-
-  if (existing) {
-    await prisma.propertyBoost.update({
-      where: { id: existing.id },
-      data: { status: 'ACTIVE', expiresAt },
-    })
-  } else {
-    await prisma.propertyBoost.create({
-      data: {
-        boostType,
-        status: 'ACTIVE',
-        amountPaid: payment.value,
-        expiresAt,
-        propertyId,
-        userId,
-        stripePaymentIntentId: payment.id,
-      },
-    })
+/** A assinatura só é cancelada no site se ela realmente não existir mais no Asaas */
+async function sumiuDoAsaas(subscriptionId: string) {
+  if (!isAsaasConfigured()) return false
+  try {
+    const assinatura = await getAsaasClient().subscriptions.get(subscriptionId)
+    return assinatura.status !== 'ACTIVE'
+  } catch {
+    // O Asaas responde erro para assinatura apagada
+    return true
   }
+}
 
-  await prisma.property.update({
-    where: { id: propertyId },
-    data: { featured: true },
-  })
-
-  console.log(`🚀 Foguete ativado: ${boostType} para imóvel ${propertyId}`)
+/**
+ * Confere a cobrança direto no Asaas antes de liberar plano ou foguete. Assim o site
+ * age pelo que o Asaas confirma, e não pelo que chegou no corpo da requisição.
+ */
+async function confirmarNoAsaas(payment: any) {
+  if (!isAsaasConfigured()) return null
+  try {
+    const cobranca = await getAsaasClient().payments.get(payment.id)
+    if (!PAGOS.includes(cobranca.status)) return null
+    return { ...cobranca, externalReference: cobranca.externalReference ?? payment.externalReference }
+  } catch (err) {
+    console.error('[Asaas Webhook] não consegui conferir a cobrança:', (err as Error).message)
+    return null
+  }
 }

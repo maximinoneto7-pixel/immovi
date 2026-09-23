@@ -66,6 +66,10 @@ export function getAsaasClient() {
       get: (id: string) =>
         request<AsaasPayment>('GET', `/payments/${id}`),
 
+      /** Cobranças de um cliente, da mais recente para a mais antiga */
+      listByCustomer: (customerId: string, limit = 20) =>
+        request<{ data: AsaasPayment[] }>('GET', `/payments?customer=${customerId}&limit=${limit}&order=desc`),
+
       getPixQrCode: (id: string) =>
         request<{ encodedImage: string; payload: string; expirationDate: string }>('GET', `/payments/${id}/pixQrCode`),
 
@@ -161,6 +165,10 @@ export interface AsaasPayment {
   invoiceUrl?: string
   bankSlipUrl?: string
   pixTransaction?: string
+  /** Assinatura de origem, quando a cobrança nasce de um plano */
+  subscription?: string | null
+  /** "userId:planId" ou "boost:propertyId:tipo:userId" */
+  externalReference?: string | null
 }
 
 // ─── Helper: formatar data para Asaas (YYYY-MM-DD) ──────────────────────────

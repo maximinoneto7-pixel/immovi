@@ -11,12 +11,17 @@ import {
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { formatPrice, PLANOS } from '@/lib/stripe'
 import CancelSubscriptionButton from '@/components/pagamentos/CancelSubscriptionButton'
+import { sincronizarPagamentos } from '@/lib/asaas-sync'
 
 export default async function PagamentosPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login?redirect=/pagamentos')
 
   const isAdmin = session.user.role === 'ADMIN'
+
+  // Rede de segurança: se algum pagamento foi confirmado no Asaas e o aviso não chegou,
+  // ele é ativado aqui, antes de a página mostrar a situação do plano
+  await sincronizarPagamentos(session.user.id)
 
   // Dados do usuário atual
   const user = await prisma.user.findUnique({
