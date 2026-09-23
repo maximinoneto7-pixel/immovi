@@ -67,10 +67,10 @@ export default async function HomePage() {
 
   const diferenciais = [
     { icon: Users, bg: 'bg-indigo-100', text: 'text-indigo-600', title: 'Contato Direto', desc: 'Fale diretamente com o proprietário ou comprador, sem intermediários que encarecem e complicam.' },
-    { icon: Shield, bg: 'bg-green-100', text: 'text-green-600', title: 'Perfis Verificados', desc: 'Todos os usuários passam por verificação de identidade. Você sabe com quem está negociando.' },
+    { icon: Shield, bg: 'bg-green-100', text: 'text-green-600', title: 'Anúncio Verificado', desc: 'O anunciante pode enviar a matrícula do imóvel. Quando ela confere com o nome dele, o anúncio ganha o selo.' },
     { icon: Heart, bg: 'bg-red-100', text: 'text-red-500', title: 'História do Imóvel', desc: 'O vendedor conta a história do lugar — o que ama, a vizinhança, a rotina. Humanidade real.' },
     { icon: MessageCircle, bg: 'bg-violet-100', text: 'text-violet-600', title: 'Chat Seguro', desc: 'Sistema de mensagens integrado. Histórico de conversas preservado e protegido na plataforma.' },
-    { icon: FileText, bg: 'bg-amber-100', text: 'text-amber-600', title: 'Contrato Digital', desc: 'Assine contratos com validade jurídica diretamente na plataforma, sem complicação.' },
+    { icon: FileText, bg: 'bg-amber-100', text: 'text-amber-600', title: 'Contrato Pronto', desc: 'Gere o contrato de compra e venda, locação, permuta ou cessão preenchido, pronto para imprimir e assinar.' },
     { icon: TrendingUp, bg: 'bg-teal-100', text: 'text-teal-600', title: 'Sem Taxa Obrigatória', desc: 'Negociação direta sem taxa de corretagem obrigatória. Você economiza e negocia com mais liberdade.' },
   ]
 

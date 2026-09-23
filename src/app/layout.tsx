@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: 'Immovi — Compre, venda e alugue com confiança',
   description:
-    'Plataforma imobiliária humana e segura. Conectamos compradores e vendedores diretamente, com histórias reais, perfis verificados e negociações transparentes.',
+    'Plataforma imobiliária humana e segura. Conectamos compradores e vendedores diretamente, com histórias reais, sem comissão obrigatória e com contrato pronto na plataforma.',
   keywords: 'imóveis, comprar casa, vender apartamento, aluguel, fazenda, terreno',
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Immovi' },
