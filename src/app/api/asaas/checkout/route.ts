@@ -8,6 +8,24 @@ import {
 } from '@/lib/asaas'
 import { addDays, addMonths } from 'date-fns'
 
+/**
+ * O Asaas recusa a cobrança inteira quando a URL de retorno não é do domínio
+ * cadastrado na conta. Nesse caso refazemos sem o retorno automático: a pessoa paga
+ * normalmente e o webhook confirma o pagamento do mesmo jeito.
+ */
+async function comRetornoOpcional<T>(criar: (comRetorno: boolean) => Promise<T>): Promise<T> {
+  try {
+    return await criar(true)
+  } catch (err: any) {
+    const msg = String(err?.message || '')
+    if (/URL|dom[íi]nio/i.test(msg)) {
+      console.warn('[Asaas] URL de retorno recusada, seguindo sem redirecionamento:', msg)
+      return criar(false)
+    }
+    throw err
+  }
+}
+
 export async function POST(request: Request) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -45,7 +63,7 @@ export async function POST(request: Request) {
   const asaas = getAsaasClient()
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3001'
 
-  // O Asaas exige que a URL de callback seja de um domínio cadastrado na conta
+  // O Asaas exige que a URL de retorno seja de um domínio cadastrado na conta
   // ("Minha Conta → Informações"). Em localhost isso nunca está configurado,
   // então omitimos o callback e confiamos só no webhook para confirmar o pagamento.
   const isLocalHost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
@@ -83,7 +101,7 @@ export async function POST(request: Request) {
       const plano = ASAAS_PLANOS[planId]
       if (!plano) return Response.json({ error: 'Plano inválido.' }, { status: 400 })
 
-      const subscription = await asaas.subscriptions.create({
+      const subscription = await comRetornoOpcional((comRetorno) => asaas.subscriptions.create({
         customer: customerId,
         billingType: billingType as AsaasBillingType,
         value: plano.value,
@@ -91,13 +109,13 @@ export async function POST(request: Request) {
         cycle: plano.cycle,
         description: plano.description,
         externalReference: `${user.id}:${planId}`,
-        ...(isLocalHost ? {} : {
+        ...(isLocalHost || !comRetorno ? {} : {
           callback: {
             successUrl: `${baseUrl}/pagamentos?success=1&provider=asaas`,
             autoRedirect: true,
           },
         }),
-      })
+      }))
 
       // Busca a cobrança gerada para obter o link de pagamento
       const payments = await asaas.subscriptions.listPayments(subscription.id)
@@ -140,20 +158,20 @@ export async function POST(request: Request) {
       })
       if (!property) return Response.json({ error: 'Imóvel não encontrado.' }, { status: 404 })
 
-      const payment = await asaas.payments.create({
+      const payment = await comRetornoOpcional((comRetorno) => asaas.payments.create({
         customer: customerId,
         billingType: billingType as AsaasBillingType,
         value: foguete.value,
         dueDate: nextDueDate(),
         description: foguete.description,
         externalReference: `boost:${propertyId}:${boostType}:${user.id}`,
-        ...(isLocalHost ? {} : {
+        ...(isLocalHost || !comRetorno ? {} : {
           callback: {
             successUrl: `${baseUrl}/imoveis/${propertyId}?boost=success`,
             autoRedirect: true,
           },
         }),
-      })
+      }))
 
       const days = parseInt(boostType.replace('FOGUETE_', ''))
 
