@@ -48,6 +48,9 @@ model User {
   priceAlerts   Boolean   @default(true)
   // Conta encerrada pela própria pessoa: some do site, mas o registro do negócio fica
   deletedAt     DateTime?
+  // Proteção contra tentativa de adivinhar senha
+  failedLogins  Int       @default(0)
+  lockedUntil   DateTime?
   // Arquivo restrito (só a administração vê): sustenta contratos e registros fiscais
   archivedName  String?
   archivedCpf   String?
@@ -156,6 +159,13 @@ model Property {
   boosts        PropertyBoost[]
   contracts     Contract[]
   documents     PropertyDocument[]
+
+  // Índices das buscas: situação sempre entra, combinada com cidade, estado, tipo e data
+  @@index([status, city])
+  @@index([status, state])
+  @@index([status, type])
+  @@index([status, createdAt])
+  @@index([ownerId])
 }
 
 model PropertyImage {

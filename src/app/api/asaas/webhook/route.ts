@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { avisarErro } from '@/lib/alerta-erro'
 import { sendPaymentOverdueEmail } from '@/lib/email'
 import { getAsaasClient, isAsaasConfigured } from '@/lib/asaas'
 import { ativarPagamento } from '@/lib/asaas-activation'
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
         console.log(`[Asaas] Evento não tratado: ${eventType}`)
     }
   } catch (err) {
-    console.error('[Asaas Webhook] Erro:', err)
+    avisarErro('aviso de pagamento (webhook Asaas)', err, { evento: eventType, cobranca: payment?.id })
     return Response.json({ error: 'Erro interno.' }, { status: 500 })
   }
 

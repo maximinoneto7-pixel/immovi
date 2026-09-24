@@ -5,6 +5,13 @@ import Apple from 'next-auth/providers/apple'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
+// Trava de senha: protege contra robô testando senha atrás de senha
+const MAX_TENTATIVAS = 5
+function esperaDeBloqueio(tentativas: number) {
+  const minutos = Math.min(30, 5 * 2 ** (tentativas - MAX_TENTATIVAS))
+  return minutos * 60 * 1000
+}
+
 const providers = [
   Credentials({
     name: 'credentials',
@@ -23,12 +30,32 @@ const providers = [
       // Conta encerrada pela própria pessoa não volta a entrar
       if (user.deletedAt) return null
 
+      // Senha errada demais: a conta descansa alguns minutos antes de aceitar nova tentativa
+      if (user.lockedUntil && user.lockedUntil > new Date()) return null
+
       const passwordMatch = await bcrypt.compare(
         credentials.password as string,
         user.password
       )
 
-      if (!passwordMatch) return null
+      if (!passwordMatch) {
+        const tentativas = user.failedLogins + 1
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            failedLogins: tentativas,
+            // A partir da 5ª, a espera dobra: 5, 10, 20… até 30 minutos
+            lockedUntil: tentativas >= MAX_TENTATIVAS
+              ? new Date(Date.now() + esperaDeBloqueio(tentativas))
+              : null,
+          },
+        })
+        return null
+      }
+
+      if (user.failedLogins > 0 || user.lockedUntil) {
+        await prisma.user.update({ where: { id: user.id }, data: { failedLogins: 0, lockedUntil: null } })
+      }
 
       return {
         id: user.id,

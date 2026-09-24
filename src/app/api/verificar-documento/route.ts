@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { analyzePropertyDocument, getActiveProvider } from '@/lib/document-ai'
 import { sendDocumentVerifiedEmail, sendDocumentQueuedEmail } from '@/lib/email'
 import { uploadFile } from '@/lib/storage'
+import { avisarErro } from '@/lib/alerta-erro'
 
 export const maxDuration = 60
 
@@ -146,7 +147,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error: any) {
-    console.error('Erro na análise de documento:', error)
+    avisarErro('verificação de documento', error)
 
     // Nenhum provedor configurado aceita este formato (ex.: PDF com só o Grok ativo)
     if (error.message === 'NENHUMA_CHAVE') {

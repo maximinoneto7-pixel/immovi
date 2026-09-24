@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth'
+import { avisarErro } from '@/lib/alerta-erro'
 import { prisma } from '@/lib/prisma'
 import {
   getAsaasClient, isAsaasConfigured,
@@ -203,7 +204,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Tipo de pagamento inválido.' }, { status: 400 })
 
   } catch (err: any) {
-    console.error('Erro Asaas checkout:', err.message)
+    avisarErro('pagamento (checkout Asaas)', err, { tipo: type, plano: planId })
     return Response.json({ error: err.message || 'Erro ao processar pagamento.' }, { status: 500 })
   }
 }

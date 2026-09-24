@@ -2,19 +2,25 @@ import { NextResponse } from 'next/server'
 import type { NextRequest, NextFetchEvent } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Robôs de busca e monitores enchiam o registro de visitas sem dizer nada sobre gente
+const ROBOS = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|whatsapp|telegram|headless|lighthouse|pingdom|uptime|curl|wget|python-requests|axios|postman/i
+
 export function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl
+  const agente = request.headers.get('user-agent') || ''
 
-  event.waitUntil(
-    prisma.pageView
-      .create({
-        data: {
-          path: pathname,
-          referrer: request.headers.get('referer') || null,
-        },
-      })
-      .catch(() => {})
-  )
+  if (!ROBOS.test(agente)) {
+    event.waitUntil(
+      prisma.pageView
+        .create({
+          data: {
+            path: pathname,
+            referrer: request.headers.get('referer') || null,
+          },
+        })
+        .catch(() => {})
+    )
+  }
 
   return NextResponse.next()
 }

@@ -22,10 +22,14 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const session = await auth()
+  if (!session?.user?.id) return Response.json({ error: 'Não autenticado.' }, { status: 401 })
+
   const { searchParams } = new URL(request.url)
   const endpoint = searchParams.get('endpoint')
   if (!endpoint) return Response.json({ error: 'Endpoint obrigatório.' }, { status: 400 })
 
-  await prisma.pushSubscription.deleteMany({ where: { endpoint } })
+  // Só a própria pessoa cancela a sua inscrição
+  await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: session.user.id } })
   return Response.json({ success: true })
 }

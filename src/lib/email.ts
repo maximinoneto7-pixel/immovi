@@ -650,3 +650,43 @@ export async function sendDocumentReviewedEmail(
 
   return send(to, aprovado ? `Anúncio verificado: ${propertyTitle}` : `Documento não aprovado: ${propertyTitle}`, html)
 }
+
+// ─── 17. Aviso de erro para a administração ───────────────────────────────────
+
+export async function sendErrorAlertEmail(
+  to: string,
+  onde: string,
+  mensagem: string,
+  pilha?: string,
+  detalhes?: Record<string, unknown>
+) {
+  const escapar = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+  const html = layout(`
+    <h1 style="color:#111827;font-size:20px;margin:0 0 6px;">Algo quebrou no site</h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 14px;">
+      Em <strong style="color:#111827;">${escapar(onde)}</strong>, às ${new Date().toLocaleString('pt-BR')}.
+    </p>
+
+    <div style="background:#fdecec;border-radius:10px;padding:12px 14px;margin:0 0 12px;">
+      <div style="font-size:12px;font-weight:700;color:#8a1c1c;margin-bottom:4px;">Mensagem</div>
+      <div style="font-size:14px;color:#111827;font-family:monospace;">${escapar(mensagem)}</div>
+    </div>
+
+    ${detalhes ? `<div style="background:#f9fafb;border-radius:10px;padding:12px 14px;margin:0 0 12px;">
+      <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:4px;">Contexto</div>
+      <div style="font-size:12px;color:#374151;font-family:monospace;">${escapar(JSON.stringify(detalhes))}</div>
+    </div>` : ''}
+
+    ${pilha ? `<div style="background:#f9fafb;border-radius:10px;padding:12px 14px;">
+      <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:4px;">Onde aconteceu</div>
+      <pre style="font-size:11px;color:#4b5563;white-space:pre-wrap;margin:0;">${escapar(pilha.split('\n').slice(0, 8).join('\n'))}</pre>
+    </div>` : ''}
+
+    <p style="color:#9ca3af;font-size:11px;margin:14px 0 0;">
+      O mesmo erro só avisa uma vez por hora, e são no máximo 10 avisos por hora.
+    </p>
+  `, `Erro em ${onde}`)
+
+  return send(to, `⚠️ Erro na Immovi: ${onde}`, html)
+}

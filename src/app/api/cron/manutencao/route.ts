@@ -45,7 +45,11 @@ export async function GET(request: Request) {
     await prisma.property.updateMany({ where: { id: { in: orfaos } }, data: { featured: false } })
   }
 
-  const resultado = { destaquesEncerrados, destaquesSemFoguete: orfaos.length, em: agora.toISOString() }
+  // ── Registro de visitas: guarda 90 dias, que é o que o painel usa ─────────
+  const corte = new Date(agora.getTime() - 90 * 24 * 60 * 60 * 1000)
+  const { count: visitasApagadas } = await prisma.pageView.deleteMany({ where: { createdAt: { lt: corte } } })
+
+  const resultado = { destaquesEncerrados, destaquesSemFoguete: orfaos.length, visitasApagadas, em: agora.toISOString() }
   console.log('[Manutenção diária]', JSON.stringify(resultado))
   return Response.json(resultado)
 }
