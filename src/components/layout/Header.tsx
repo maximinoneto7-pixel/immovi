@@ -228,14 +228,6 @@ export default function Header({ user }: HeaderProps) {
                             <span className="text-base leading-none">🏦</span>
                             Configurar Asaas
                           </Link>
-                          <Link
-                            href="/admin/stripe"
-                            onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            <CreditCard className="w-4 h-4 text-green-500" />
-                            Configurar Stripe
-                          </Link>
                         </>
                       )}
                       <div className="border-t border-gray-100 mt-1">

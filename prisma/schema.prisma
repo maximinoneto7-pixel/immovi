@@ -46,6 +46,11 @@ model User {
   official      Boolean   @default(false)
   // Avisos de baixa de preço nos imóveis favoritados (e-mail e notificação no celular)
   priceAlerts   Boolean   @default(true)
+  // Conta encerrada pela própria pessoa: some do site, mas o registro do negócio fica
+  deletedAt     DateTime?
+  // Arquivo restrito (só a administração vê): sustenta contratos e registros fiscais
+  archivedName  String?
+  archivedCpf   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -329,6 +334,12 @@ model PropertyDocument {
   extractedLiens    String?
   aiAnalysis     String?
   ownerMatch     Boolean?
+  // Arquivo enviado, guardado só até a conferência
+  fileUrl        String?
+  // Conferência humana (enquanto a IA não entra)
+  reviewedById   String?
+  reviewedAt     DateTime?
+  reviewNote     String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
