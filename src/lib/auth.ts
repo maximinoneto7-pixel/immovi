@@ -20,6 +20,8 @@ const providers = [
       })
 
       if (!user || !user.password) return null
+      // Conta encerrada pela própria pessoa não volta a entrar
+      if (user.deletedAt) return null
 
       const passwordMatch = await bcrypt.compare(
         credentials.password as string,
@@ -95,6 +97,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: token.email! },
         })
         if (existing) {
+          // Conta encerrada: não reabre pelo Google
+          if (existing.deletedAt) return {}
           token.id = existing.id
           token.role = existing.role
           // O próprio Google/Apple confirma o endereço: a conta não precisa do link

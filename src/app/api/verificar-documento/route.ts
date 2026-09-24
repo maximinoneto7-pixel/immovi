@@ -1,7 +1,8 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { analyzePropertyDocument, getActiveProvider, PROVIDER_INFO } from '@/lib/document-ai'
-import { sendDocumentVerifiedEmail } from '@/lib/email'
+import { analyzePropertyDocument, getActiveProvider } from '@/lib/document-ai'
+import { sendDocumentVerifiedEmail, sendDocumentQueuedEmail } from '@/lib/email'
+import { uploadFile } from '@/lib/storage'
 
 export const maxDuration = 60
 
@@ -12,13 +13,6 @@ export async function POST(request: Request) {
   }
 
   const provider = getActiveProvider()
-  if (provider === 'none') {
-    return Response.json({
-      error: 'A verificação automática de documentos está indisponível no momento. Tente novamente mais tarde.',
-      code: 'NENHUMA_CHAVE',
-      providers: PROVIDER_INFO,
-    }, { status: 503 })
-  }
 
   try {
     const formData = await request.formData()
@@ -56,15 +50,38 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer()
     const base64 = Buffer.from(bytes).toString('base64')
 
+    // O arquivo fica guardado até alguém conferir (endereço aleatório, só o admin abre)
+    const guardado = await uploadFile(file, 'documentos').catch((err) => {
+      console.error('[Documento] falha ao guardar o arquivo:', err.message)
+      return null
+    })
+
     // Criar registro de documento pendente
     const doc = await prisma.propertyDocument.create({
       data: {
         propertyId,
         documentType: 'MATRICULA',
-        status: 'PROCESSING',
+        status: provider === 'none' ? 'PENDING' : 'PROCESSING',
         originalName: file.name,
+        fileUrl: guardado?.url || null,
       },
     })
+
+    // Sem IA configurada: o documento entra na fila de conferência da equipe
+    if (provider === 'none') {
+      const dono = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { email: true, name: true },
+      })
+      if (dono) sendDocumentQueuedEmail(dono.email, dono.name, property.title).catch(console.error)
+
+      return Response.json({
+        success: true,
+        documentId: doc.id,
+        emAnalise: true,
+        mensagem: 'Documento recebido. Nossa equipe vai conferir e o selo aparece no anúncio assim que for aprovado.',
+      })
+    }
 
     // Analisar com Claude IA
     const { analysis, ownerMatch, ownerMatchDetails } = await analyzePropertyDocument(

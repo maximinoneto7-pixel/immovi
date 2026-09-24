@@ -200,6 +200,23 @@ export default async function PrivacidadePage() {
                 <li><strong>Logs de acesso:</strong> 6 (seis) meses, conforme o Marco Civil da Internet (Lei nº 12.965/2014)</li>
               </ul>
               <p>Após o vencimento dos prazos acima, os dados são anonimizados ou excluídos de forma segura e irreversível.</p>
+
+              <h3>6.1. Encerramento pelo próprio titular</h3>
+              <p>
+                Você pode encerrar sua conta a qualquer momento em <strong>Meu Perfil → Editar perfil → Encerrar minha conta</strong>,
+                sem precisar falar com ninguém. Ao encerrar:
+              </p>
+              <ul>
+                <li><strong>Saem do ar imediatamente:</strong> seus anúncios, seu perfil público e sua presença no chat</li>
+                <li><strong>São apagados:</strong> telefone, foto, biografia, dados de corretor, favoritos, alertas de busca e inscrições de notificação</li>
+                <li><strong>É liberado:</strong> o e-mail do login, permitindo que você crie uma nova conta com o mesmo endereço</li>
+                <li><strong>Permanecem em arquivo restrito, acessível apenas à administração:</strong> seu nome e CPF, <em>quando houver contrato gerado ou pagamento registrado</em> — sem eles o contrato e o registro fiscal perdem validade (art. 16, I e II, da LGPD). Se você nunca gerou contrato nem efetuou pagamento, nome e CPF também são apagados</li>
+                <li><strong>Permanecem:</strong> as mensagens trocadas, assinadas como “Usuário removido”, porque a conversa pertence também à outra pessoa</li>
+              </ul>
+              <p>
+                Os dados mantidos em arquivo restrito seguem os prazos da seção 6 e são eliminados ao final deles.
+                Para pedir a eliminação antecipada, fale conosco pelo canal de atendimento da seção 13.
+              </p>
             </section>
 
             <section id="direitos">

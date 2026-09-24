@@ -600,3 +600,53 @@ export async function sendEmailConfirmationEmail(to: string, name: string, confi
 
   return send(to, 'Confirme seu e-mail na Immovi', html)
 }
+
+// ─── 15. Documento recebido, aguardando conferência ───────────────────────────
+
+export async function sendDocumentQueuedEmail(to: string, name: string, propertyTitle: string) {
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 10px;">Recebemos seu documento</h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 10px;">
+      A matrícula que você enviou para <strong>${propertyTitle}</strong> está na fila de conferência.
+      Nossa equipe compara o documento com o nome do anunciante e, estando tudo certo,
+      o selo de <strong>anúncio verificado</strong> aparece no seu anúncio.
+    </p>
+    <p style="color:#6b7280;font-size:14px;margin:0;">Costuma levar até um dia útil. Avisamos por e-mail assim que sair o resultado.</p>
+  `, 'Documento recebido para conferência')
+
+  return send(to, 'Recebemos o documento do seu anúncio', html)
+}
+
+// ─── 16. Resultado da conferência feita pela equipe ───────────────────────────
+
+export async function sendDocumentReviewedEmail(
+  to: string,
+  name: string,
+  propertyTitle: string,
+  propertyId: string,
+  aprovado: boolean,
+  motivo?: string | null
+) {
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 10px;">
+      ${aprovado ? 'Seu anúncio está verificado' : 'Não conseguimos verificar seu anúncio'}
+    </h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 10px;">
+      ${aprovado
+        ? `Conferimos a matrícula de <strong>${propertyTitle}</strong> e ela bate com o seu nome. O selo de anúncio verificado já aparece para quem visita.`
+        : `Conferimos a matrícula de <strong>${propertyTitle}</strong> e não foi possível aprovar.`}
+    </p>
+    ${!aprovado && motivo ? `<div style="background:#fdecec;border-radius:10px;padding:12px 14px;margin:0 0 10px;">
+      <div style="font-size:12px;font-weight:700;color:#8a1c1c;margin-bottom:3px;">Motivo</div>
+      <div style="font-size:14px;color:#111827;">${motivo}</div>
+    </div>` : ''}
+
+    ${btn(`${BASE_URL}/imoveis/${propertyId}`, 'Ver meu anúncio')}
+
+    ${!aprovado ? `<p style="color:#9ca3af;font-size:12px;margin:0;">Você pode enviar outro arquivo pelo próprio anúncio.</p>` : ''}
+  `, aprovado ? 'Anúncio verificado' : 'Documento não aprovado')
+
+  return send(to, aprovado ? `Anúncio verificado: ${propertyTitle}` : `Documento não aprovado: ${propertyTitle}`, html)
+}

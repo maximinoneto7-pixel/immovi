@@ -1,5 +1,5 @@
 import { writeFile, mkdir } from 'fs/promises'
-import { put } from '@vercel/blob'
+import { put, del } from '@vercel/blob'
 import { existsSync } from 'fs'
 import path from 'path'
 import crypto from 'crypto'
@@ -110,4 +110,23 @@ export async function uploadMultiple(
   folder: string = 'imoveis'
 ): Promise<UploadResult[]> {
   return Promise.all(files.map(f => uploadFile(f, folder)))
+}
+
+/**
+ * Apaga um arquivo enviado. Usado quando o documento conferido não precisa mais
+ * ser guardado — matrícula tem CPF e endereço, então some assim que cumpre o papel.
+ */
+export async function deleteFile(url: string): Promise<void> {
+  if (!url) return
+  try {
+    if (url.startsWith('http')) {
+      await del(url)
+      return
+    }
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    await fs.unlink(path.join(process.cwd(), 'public', url.replace(/^\//, '')))
+  } catch (err) {
+    console.error('[Storage] não consegui apagar o arquivo:', (err as Error).message)
+  }
 }

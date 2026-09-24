@@ -9,7 +9,7 @@ import { bucketByDay } from '@/lib/analytics'
 import {
   Users, Home, MessageCircle, TrendingUp, Shield,
   Eye, UserCheck, AlertTriangle, Crown, Rocket,
-  ArrowUpRight, Calendar, MapPin, Settings, Database, BarChart3,
+  ArrowUpRight, Calendar, MapPin, Settings, Database, BarChart3, FileText,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
@@ -104,6 +104,9 @@ export default async function AdminPage() {
               </Link>
               <Link href="/admin/anuncios" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <Home className="w-4 h-4" /> Anúncios
+              </Link>
+              <Link href="/admin/documentos" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+                <FileText className="w-4 h-4" /> Matrículas
               </Link>
               <Link href="/admin/conversas" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" /> Conversas

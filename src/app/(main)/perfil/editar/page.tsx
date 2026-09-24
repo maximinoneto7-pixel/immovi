@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import EditProfileForm from '@/components/perfil/EditProfileForm'
+import CloseAccount from '@/components/perfil/CloseAccount'
 import ChangePasswordForm from '@/components/perfil/ChangePasswordForm'
 import { ArrowLeft } from 'lucide-react'
 
@@ -42,6 +43,7 @@ export default async function EditarPerfilPage() {
 
           <EditProfileForm user={userWithoutPassword} />
           <ChangePasswordForm hasPassword={!!password} />
+          <CloseAccount temSenha={!!password} />
         </div>
       </main>
       <Footer />

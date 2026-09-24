@@ -29,9 +29,15 @@ export default function BoostPanel({ propertyId, currentBoost }: BoostPanelProps
       </p>
 
       {isActive ? (
-        <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl text-sm font-medium text-amber-700">
-          <Rocket className="w-4 h-4 fill-current" />
-          Foguete ativo até {new Date(currentBoost!.expiresAt).toLocaleDateString('pt-BR')}
+        <div className="p-3 bg-amber-50 rounded-xl text-sm text-amber-800">
+          <div className="flex items-center gap-2 font-semibold">
+            <Rocket className="w-4 h-4 fill-current" />
+            Destaque até {new Date(currentBoost!.expiresAt).toLocaleDateString('pt-BR')}
+          </div>
+          <p className="text-xs text-amber-700 mt-1">
+            Faltam {Math.max(1, Math.ceil((new Date(currentBoost!.expiresAt).getTime() - Date.now()) / 86400000))} dia(s).
+            Depois disso o anúncio volta à posição normal. Comprar outro Foguete agora soma ao prazo que resta.
+          </p>
         </div>
       ) : (
         <>

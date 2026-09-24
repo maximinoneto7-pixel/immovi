@@ -66,7 +66,14 @@ export async function ativarFoguetePago(payment: PagamentoAsaas): Promise<boolea
   if (jaAtivo) return false
 
   const days = parseInt(boostType.replace('FOGUETE_', ''))
-  const expiresAt = addDays(new Date(), days)
+
+  // Comprou outro Foguete com um ainda válido: o prazo soma, em vez de perder o que sobrou
+  const emDia = await prisma.propertyBoost.findFirst({
+    where: { propertyId, status: 'ACTIVE', expiresAt: { gte: new Date() } },
+    orderBy: { expiresAt: 'desc' },
+    select: { expiresAt: true },
+  })
+  const expiresAt = addDays(emDia?.expiresAt ?? new Date(), days)
 
   const pendente = await prisma.propertyBoost.findFirst({
     where: { propertyId, userId, boostType, status: 'PENDING' },

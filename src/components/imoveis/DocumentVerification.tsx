@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import {
   Shield, Upload, CheckCircle2, XCircle, AlertTriangle,
   FileText, Loader2, Eye, ChevronDown, ChevronUp, X,
-  Users, Home, Hash, Ruler, AlertCircle, Sparkles,
+  Users, Home, Hash, Ruler, AlertCircle, Sparkles, Clock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -47,6 +47,7 @@ export default function DocumentVerification({
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<VerificationResult | null>(null)
+  const [naFila, setNaFila] = useState(false)
   const [error, setError] = useState('')
   const [showDetails, setShowDetails] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -88,6 +89,10 @@ export default function DocumentVerification({
 
       if (!res.ok) {
         setError(data.error || 'Erro ao verificar documento.')
+      } else if (data.emAnalise) {
+        // Sem leitura automática: a equipe confere à mão
+        setNaFila(true)
+        setSelectedFile(null)
       } else {
         setResult(data)
         setSelectedFile(null)
@@ -136,8 +141,22 @@ export default function DocumentVerification({
           </div>
         </div>
 
+        {/* Enviado agora e aguardando a conferência da equipe */}
+        {naFila && (
+          <div className="flex items-start gap-3 p-3 rounded-xl border bg-amber-50 border-amber-200">
+            <Clock className="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5" />
+            <div>
+              <div className="text-sm font-semibold text-amber-900">Documento recebido</div>
+              <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                Nossa equipe vai conferir a matrícula e o selo de anúncio verificado aparece assim que for aprovado.
+                Costuma levar até um dia útil, e avisamos por e-mail.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Histórico de documentos */}
-        {latestDoc && !result && (
+        {latestDoc && !result && !naFila && (
           <div className={cn(
             'flex items-center gap-3 p-3 rounded-xl border',
             latestDoc.status === 'VERIFIED' ? 'bg-green-50 border-green-200' :
@@ -153,7 +172,7 @@ export default function DocumentVerification({
               <div className="text-sm font-semibold text-gray-900">
                 {latestDoc.status === 'VERIFIED' ? '✓ Documento verificado' :
                  latestDoc.status === 'MISMATCH' ? '✗ Proprietário não confirmado' :
-                 'Documento em análise'}
+                 'Documento em análise pela equipe'}
               </div>
               {latestDoc.extractedOwners && (
                 <div className="text-xs text-gray-500 mt-0.5">
