@@ -690,3 +690,76 @@ export async function sendErrorAlertEmail(
 
   return send(to, `⚠️ Erro na Immovi: ${onde}`, html)
 }
+
+// ─── 18. Denúncia de anúncio ─────────────────────────────────────────────────
+
+export async function sendReportAlertEmail(d: {
+  motivo: string
+  relato: string | null
+  imovel: string
+  propertyId: string
+  anunciante: string
+  denunciante: string
+}) {
+  const para = process.env.ALERT_EMAIL || (await (async () => {
+    const { prisma } = await import('@/lib/prisma')
+    const admin = await prisma.user.findFirst({
+      where: { role: 'ADMIN', deletedAt: null },
+      select: { email: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    return admin?.email
+  })())
+  if (!para) return { success: false, error: 'sem administrador cadastrado' }
+
+  const html = layout(`
+    <h1 style="color:#111827;font-size:21px;margin:0 0 6px;">Denúncia de anúncio</h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 14px;">Recebida em ${new Date().toLocaleString('pt-BR')}.</p>
+
+    <div style="background:#fdecec;border-radius:10px;padding:12px 14px;margin:0 0 12px;">
+      <div style="font-size:12px;font-weight:700;color:#8a1c1c;margin-bottom:3px;">Motivo</div>
+      <div style="font-size:15px;color:#111827;font-weight:600;">${d.motivo}</div>
+      ${d.relato ? `<div style="font-size:13px;color:#374151;margin-top:8px;">"${d.relato}"</div>` : ''}
+    </div>
+
+    <table cellpadding="0" cellspacing="0" style="width:100%;font-size:13px;color:#374151;margin:0 0 12px;">
+      <tr><td style="padding:4px 0;width:110px;color:#6b7280;">Imóvel</td><td style="padding:4px 0;font-weight:600;">${d.imovel}</td></tr>
+      <tr><td style="padding:4px 0;color:#6b7280;">Anunciante</td><td style="padding:4px 0;">${d.anunciante}</td></tr>
+      <tr><td style="padding:4px 0;color:#6b7280;">Denunciante</td><td style="padding:4px 0;">${d.denunciante}</td></tr>
+    </table>
+
+    ${btn(`${BASE_URL}/admin/denuncias`, 'Analisar no painel')}
+
+    <p style="color:#9ca3af;font-size:11px;margin:8px 0 0;">
+      Nada sai do ar sozinho: a decisão de remover o anúncio ou suspender a conta é sua.
+    </p>
+  `, `Denúncia: ${d.motivo}`)
+
+  return send(para, `🚨 Denúncia de anúncio: ${d.motivo}`, html)
+}
+
+// ─── 19. Anúncio removido depois de denúncia ─────────────────────────────────
+
+export async function sendListingRemovedEmail(
+  to: string,
+  name: string,
+  propertyTitle: string,
+  motivo: string
+) {
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:21px;margin:0 0 10px;">Seu anúncio saiu do ar</h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 10px;">
+      O anúncio <strong>${propertyTitle}</strong> foi retirado após análise de uma denúncia.
+    </p>
+    <div style="background:#fdecec;border-radius:10px;padding:12px 14px;margin:0 0 12px;">
+      <div style="font-size:12px;font-weight:700;color:#8a1c1c;margin-bottom:3px;">Motivo</div>
+      <div style="font-size:14px;color:#111827;">${motivo}</div>
+    </div>
+    <p style="color:#6b7280;font-size:14px;margin:0;">
+      Se você discorda, responda este e-mail com a documentação do imóvel que nós reavaliamos.
+    </p>
+  `, 'Seu anúncio saiu do ar')
+
+  return send(to, `Seu anúncio saiu do ar: ${propertyTitle}`, html)
+}

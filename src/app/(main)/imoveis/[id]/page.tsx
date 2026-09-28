@@ -11,6 +11,7 @@ import ContactForm from '@/components/imoveis/ContactForm'
 import DocumentVerification from '@/components/imoveis/DocumentVerification'
 import ManageListingPanel from '@/components/imoveis/ManageListingPanel'
 import ListingActions from '@/components/imoveis/ListingActions'
+import ReportListing from '@/components/imoveis/ReportListing'
 import CompareBar from '@/components/imoveis/CompareBar'
 import { getVideoEmbedUrl } from '@/lib/video'
 import {
@@ -626,18 +627,30 @@ export default async function PropertyDetailPage({
                 </div>
               )}
 
-              {/* Security badge */}
+              {/* Como não cair em golpe — o passo a passo que evita a fraude mais comum */}
               <div className="bg-indigo-50 rounded-2xl border border-indigo-100 p-4">
                 <div className="flex items-start gap-3">
                   <Shield className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="text-sm font-semibold text-indigo-900 mb-1">Negociação segura</div>
-                    <p className="text-xs text-indigo-700 leading-relaxed">
-                      Mantenha todas as conversas e combinações dentro da plataforma para garantir segurança e ter histórico documentado.
+                    <div className="text-sm font-semibold text-indigo-900 mb-1">Antes de pagar qualquer valor</div>
+                    <ol className="text-xs text-indigo-800 leading-relaxed space-y-1.5 list-decimal pl-4">
+                      <li>Peça a <strong>certidão atualizada da matrícula</strong> no cartório de registro de imóveis. Não aceite só o arquivo enviado pelo anunciante.</li>
+                      <li>Confira se o nome do vendedor é o mesmo da certidão e peça um documento com foto.</li>
+                      <li>Desconfie de pressa, preço muito abaixo do mercado e PIX para conta de terceiro.</li>
+                      <li>Mantenha a conversa aqui: o histórico fica registrado.</li>
+                    </ol>
+                    <p className="text-[11px] text-indigo-700/80 mt-2 leading-relaxed">
+                      A Immovi veicula o anúncio publicado pelo anunciante. Não intermedeia a negociação nem garante a documentação do imóvel.
                     </p>
                   </div>
                 </div>
               </div>
+
+              {!canManage && (
+                <div className="flex justify-center">
+                  <ReportListing propertyId={property.id} />
+                </div>
+              )}
 
               {/* Verificação de Documentos — só para o dono */}
               {session?.user?.id === property.ownerId && (

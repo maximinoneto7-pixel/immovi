@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { RETENCAO_DIAS } from '@/lib/registro'
 
 // Manutenção diária (chamada pela Vercel). Só encerra o que já venceu: não recebe
 // parâmetro nenhum, então rodar fora de hora não muda nada além de arrumar o atraso.
@@ -49,7 +50,11 @@ export async function GET(request: Request) {
   const corte = new Date(agora.getTime() - 90 * 24 * 60 * 60 * 1000)
   const { count: visitasApagadas } = await prisma.pageView.deleteMany({ where: { createdAt: { lt: corte } } })
 
-  const resultado = { destaquesEncerrados, destaquesSemFoguete: orfaos.length, visitasApagadas, em: agora.toISOString() }
+  // ── Registro de acesso: 6 meses, como manda o Marco Civil (art. 15) ───────
+  const corteRegistro = new Date(agora.getTime() - RETENCAO_DIAS * 24 * 60 * 60 * 1000)
+  const { count: registrosApagados } = await prisma.accessLog.deleteMany({ where: { createdAt: { lt: corteRegistro } } })
+
+  const resultado = { destaquesEncerrados, destaquesSemFoguete: orfaos.length, visitasApagadas, registrosApagados, em: agora.toISOString() }
   console.log('[Manutenção diária]', JSON.stringify(resultado))
   return Response.json(resultado)
 }

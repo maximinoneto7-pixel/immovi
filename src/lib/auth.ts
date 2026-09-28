@@ -4,6 +4,7 @@ import Google from 'next-auth/providers/google'
 import Apple from 'next-auth/providers/apple'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { registrar, origemDa } from '@/lib/registro'
 
 // Trava de senha: protege contra robô testando senha atrás de senha
 const MAX_TENTATIVAS = 5
@@ -19,19 +20,32 @@ const providers = [
       email: { label: 'Email', type: 'email' },
       password: { label: 'Senha', type: 'password' },
     },
-    async authorize(credentials) {
+    async authorize(credentials, request) {
       if (!credentials?.email || !credentials?.password) return null
+      const origem = origemDa(request as any)
+      const email = credentials.email as string
 
       const user = await prisma.user.findUnique({
         where: { email: credentials.email as string },
       })
 
-      if (!user || !user.password) return null
+      if (!user || !user.password) {
+        registrar('LOGIN_FALHA', { email, ...origem, detail: 'conta não encontrada' })
+        return null
+      }
       // Conta encerrada pela própria pessoa não volta a entrar
       if (user.deletedAt) return null
+      // Conta suspensa pela administração também não
+      if (user.suspendedAt) {
+        registrar('LOGIN_FALHA', { userId: user.id, email, ...origem, detail: 'conta suspensa' })
+        return null
+      }
 
       // Senha errada demais: a conta descansa alguns minutos antes de aceitar nova tentativa
-      if (user.lockedUntil && user.lockedUntil > new Date()) return null
+      if (user.lockedUntil && user.lockedUntil > new Date()) {
+        registrar('LOGIN_FALHA', { userId: user.id, email, ...origem, detail: 'tentativa durante bloqueio' })
+        return null
+      }
 
       const passwordMatch = await bcrypt.compare(
         credentials.password as string,
@@ -50,8 +64,11 @@ const providers = [
               : null,
           },
         })
+        registrar('LOGIN_FALHA', { userId: user.id, email, ...origem, detail: `senha errada (${tentativas})` })
         return null
       }
+
+      registrar('LOGIN', { userId: user.id, email, ...origem })
 
       if (user.failedLogins > 0 || user.lockedUntil) {
         await prisma.user.update({ where: { id: user.id }, data: { failedLogins: 0, lockedUntil: null } })

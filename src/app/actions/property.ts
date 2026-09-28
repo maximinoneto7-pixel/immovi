@@ -10,6 +10,8 @@ import { listingLimitError } from '@/lib/subscription'
 import { notifyPriceDrop, shownPrice } from '@/lib/price-alerts'
 import { emailGateOpen, UNVERIFIED_PUBLISH_ERROR } from '@/lib/email-verification'
 import { after } from 'next/server'
+import { headers } from 'next/headers'
+import { registrar, origemDa } from '@/lib/registro'
 
 // Geocodifica endereço via Nominatim (OpenStreetMap)
 async function geocode(address: string, city: string, state: string) {
@@ -120,6 +122,14 @@ async function createFromForm(formData: FormData) {
     },
   })
 
+  after(async () => {
+    registrar('ANUNCIO_CRIADO', {
+      userId: session.user!.id, email: session.user!.email,
+      ...origemDa(await headers()),
+      detail: `${property.id} · ${property.title}`,
+    })
+  })
+
   revalidatePath('/imoveis')
   revalidatePath('/')
   notifyAlertsFor(property.id)
@@ -204,6 +214,14 @@ export async function updateProperty(propertyId: string, formData: FormData) {
       images: { deleteMany: {}, create: images },
       features: { deleteMany: {}, create: features.map((name) => ({ name })) },
     },
+  })
+
+  after(async () => {
+    registrar('ANUNCIO_EDITADO', {
+      userId: property.ownerId,
+      ...origemDa(await headers()),
+      detail: `${propertyId} · ${data.title}`,
+    })
   })
 
   const priceAfter = shownPrice(updated)

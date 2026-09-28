@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { deleteFile } from '@/lib/storage'
 import { sendDocumentReviewedEmail } from '@/lib/email'
 import { revalidatePath } from 'next/cache'
+import { registrar, origemDa } from '@/lib/registro'
 
 // Conferência da matrícula pela equipe: aprova ou recusa com motivo.
 // O arquivo é apagado assim que a decisão sai — ele já cumpriu o papel.
@@ -51,6 +52,12 @@ export async function PATCH(
 
   // O arquivo sai do armazenamento depois de conferido
   if (doc.fileUrl) await deleteFile(doc.fileUrl)
+
+  registrar('DOCUMENTO_CONFERIDO', {
+    userId: session.user.id,
+    ...origemDa(request as any),
+    detail: `${doc.propertyId} · ${aprovado ? 'aprovado' : 'recusado'}${motivo ? ` · ${motivo}` : ''}`,
+  })
 
   const dono = doc.property.owner
   sendDocumentReviewedEmail(

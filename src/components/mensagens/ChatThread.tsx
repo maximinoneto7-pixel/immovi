@@ -167,6 +167,15 @@ export default function ChatThread({
 
       {/* Mensagens */}
       <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-5 space-y-2">
+        {/* Aviso do sistema: o golpe mais comum é sinal por PIX com matrícula falsificada */}
+        <div className="mx-auto max-w-lg bg-indigo-50 border border-indigo-100 rounded-2xl px-3.5 py-2.5 mb-2">
+          <p className="text-[11px] text-indigo-800 leading-relaxed">
+            <strong>Antes de pagar qualquer valor</strong>, peça a certidão atualizada da matrícula no cartório e confira
+            se o nome do vendedor é o mesmo. Desconfie de pressa e de PIX para conta de terceiro. A Immovi não intermedeia
+            a negociação nem garante a documentação.
+          </p>
+        </div>
+
         {messages.length === 0 && (
           <p className="text-center text-sm text-gray-400 py-10">Nenhuma mensagem ainda.</p>
         )}

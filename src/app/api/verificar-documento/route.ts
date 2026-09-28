@@ -4,6 +4,7 @@ import { analyzePropertyDocument, getActiveProvider } from '@/lib/document-ai'
 import { sendDocumentVerifiedEmail, sendDocumentQueuedEmail } from '@/lib/email'
 import { uploadFile } from '@/lib/storage'
 import { avisarErro } from '@/lib/alerta-erro'
+import { registrar, origemDa } from '@/lib/registro'
 
 export const maxDuration = 60
 
@@ -66,6 +67,12 @@ export async function POST(request: Request) {
         originalName: file.name,
         fileUrl: guardado?.url || null,
       },
+    })
+
+    registrar('DOCUMENTO_ENVIADO', {
+      userId: session.user.id,
+      ...origemDa(request as any),
+      detail: `${propertyId} · ${file.name}`,
     })
 
     // Sem IA configurada: o documento entra na fila de conferência da equipe

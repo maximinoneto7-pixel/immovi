@@ -321,6 +321,16 @@ function NovoContratoContent({ user }: { user: HeaderUser }) {
             </div>
           )}
 
+          {/* Antes de assinar qualquer coisa: conferir a matrícula é do comprador */}
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-5">
+            <div className="text-sm font-semibold text-indigo-900 mb-1">Confira o imóvel antes de assinar</div>
+            <p className="text-xs text-indigo-800 leading-relaxed">
+              O contrato gerado aqui é um modelo preenchido com o que você digitar. Ele não substitui a conferência da
+              matrícula atualizada no cartório de registro de imóveis, nem a consulta de ônus, penhora e dívidas.
+              A Immovi não confere esses dados e não é parte do negócio.
+            </p>
+          </div>
+
           <div className="space-y-5">
             {/* ─── TIPO ─── */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

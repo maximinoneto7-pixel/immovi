@@ -51,6 +51,9 @@ model User {
   // Proteção contra tentativa de adivinhar senha
   failedLogins  Int       @default(0)
   lockedUntil   DateTime?
+  // Conta suspensa pela administração (fraude, denúncia confirmada)
+  suspendedAt   DateTime?
+  suspendedReason String?
   // Arquivo restrito (só a administração vê): sustenta contratos e registros fiscais
   archivedName  String?
   archivedCpf   String?
@@ -159,6 +162,7 @@ model Property {
   boosts        PropertyBoost[]
   contracts     Contract[]
   documents     PropertyDocument[]
+  reports       Report[]
 
   // Índices das buscas: situação sempre entra, combinada com cidade, estado, tipo e data
   @@index([status, city])
@@ -382,6 +386,52 @@ model Contract {
 }
 
 // ─── ANALYTICS ───────────────────────────────────────────────────
+
+// ─── DENÚNCIAS E REGISTRO DE PROVA ────────────────────────────────
+
+model Report {
+  id         String   @id @default(cuid())
+  // DOCUMENTO_FALSO | IMOVEL_INEXISTENTE | PAGAMENTO_FORA | ANUNCIO_ENGANOSO | OUTRO
+  reason     String
+  details    String?
+  // OPEN | ACTIONED | ARCHIVED
+  status     String   @default("OPEN")
+  // Quem denunciou (vazio quando a pessoa não está logada)
+  reporterId String?
+  reporterIp String?
+  // O que a administração fez
+  handledById String?
+  handledAt   DateTime?
+  actionTaken String?
+  handleNote  String?
+  createdAt  DateTime @default(now())
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([propertyId])
+}
+
+/**
+ * Registro de acesso e de publicação: quem fez, de onde e quando.
+ * Guardado por 6 meses, como manda o Marco Civil da Internet (art. 15).
+ */
+model AccessLog {
+  id        String   @id @default(cuid())
+  // LOGIN | LOGIN_FALHA | ANUNCIO_CRIADO | ANUNCIO_EDITADO | DOCUMENTO_ENVIADO | DOCUMENTO_CONFERIDO | DENUNCIA
+  type      String
+  userId    String?
+  email     String?
+  ip        String?
+  userAgent String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+}
 
 model PageView {
   id        String   @id @default(cuid())

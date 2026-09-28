@@ -20,7 +20,7 @@ const sections = [
   { id: 'negociacoes', title: '6. Negociações entre Usuários' },
   { id: 'pagamentos', title: '7. Planos, Pagamentos e Reembolsos' },
   { id: 'conduta', title: '8. Conduta do Usuário e Usos Proibidos' },
-  { id: 'verificacao', title: '9. Verificação de Documentos por IA' },
+  { id: 'verificacao', title: '9. Verificação de Anúncio' },
   { id: 'propriedade', title: '10. Propriedade Intelectual' },
   { id: 'responsabilidade', title: '11. Limitação de Responsabilidade' },
   { id: 'suspensao', title: '12. Suspensão e Encerramento de Conta' },
@@ -131,11 +131,18 @@ export default async function TermosPage() {
                 <li>Planos de assinatura com funcionalidades diferenciadas</li>
               </ul>
               <p>
-                <strong>Importante:</strong> a Immovi atua como <em>intermediária tecnológica</em>,
-                não sendo parte nas negociações imobiliárias realizadas entre usuários, não prestando serviços
-                de corretagem e não se responsabilizando pelo conteúdo dos anúncios ou pelo resultado das
-                negociações. Os contratos gerados pela Plataforma têm caráter de instrumento particular, sendo
-                de responsabilidade das partes a verificação de sua adequação jurídica a cada caso concreto.
+                <strong>Importante:</strong> a Immovi é um <em>provedor de aplicação de internet</em> que veicula
+                anúncios publicados por seus próprios usuários. A Operadora não é parte nas negociações imobiliárias,
+                não presta serviço de corretagem, não representa comprador nem vendedor e não participa de pagamentos
+                entre as partes. O conteúdo de cada anúncio — inclusive fotos, descrição, preço, titularidade e
+                situação jurídica do imóvel — é de responsabilidade exclusiva de quem o publica, nos termos do
+                art. 18 da Lei nº 12.965/2014 (Marco Civil da Internet).
+              </p>
+              <p>
+                A Operadora mantém canal de denúncia em cada anúncio e se compromete a analisar toda denúncia
+                recebida, podendo remover o anúncio e suspender a conta responsável, conforme a seção 11.4.
+                Os contratos gerados pela Plataforma têm caráter de instrumento particular, sendo de
+                responsabilidade das partes a verificação de sua adequação jurídica a cada caso concreto.
               </p>
             </section>
 
@@ -256,21 +263,30 @@ export default async function TermosPage() {
             </section>
 
             <section id="verificacao">
-              <h2>9. Verificação de Documentos por Inteligência Artificial</h2>
+              <h2>9. Verificação de Anúncio</h2>
               <p>
-                A Plataforma oferece o serviço de verificação de titularidade de imóveis por meio de análise
-                de documentos por Inteligência Artificial (IA). Ao utilizar este serviço, o usuário:
+                O anunciante pode enviar a matrícula do imóvel para obter o selo <strong>“Anúncio verificado”</strong>.
+                O selo significa, exclusivamente, que a equipe da Immovi <strong>comparou o nome do anunciante com o
+                nome do proprietário indicado no documento enviado por ele</strong> e encontrou correspondência.
               </p>
+              <p>O selo <strong>não significa</strong> que:</p>
               <ul>
-                <li>Autoriza o envio do documento ao provedor de IA selecionado (Google Gemini ou Anthropic Claude) para processamento</li>
-                <li>Declara que possui autorização para submeter o documento ao processamento automatizado</li>
-                <li>Reconhece que o resultado da análise é uma <strong>avaliação automatizada de caráter informativo</strong>, sujeita a erros, e não constitui certidão jurídica, laudo pericial ou qualquer documento com efeito legal</li>
-                <li>Compreende que o badge "Verificado" na Plataforma indica apenas que a IA identificou correspondência entre o nome do anunciante e o documento, não garantindo a regularidade jurídica do imóvel</li>
+                <li>o documento foi autenticado, conferido junto ao cartório de registro de imóveis ou teve sua veracidade atestada</li>
+                <li>o imóvel está livre de ônus, penhora, hipoteca, usufruto, ação judicial ou dívida</li>
+                <li>a venda ou locação é regular, ou que o anunciante tem poderes para negociar</li>
+                <li>a Operadora recomenda, garante ou assume qualquer obrigação quanto ao negócio</li>
               </ul>
               <p>
-                A Operadora não se responsabiliza por erros, imprecisões ou omissões na análise automatizada.
-                Recomendamos sempre a consulta a um profissional jurídico qualificado para verificação da
-                regularidade documental de imóveis.
+                Ao enviar o documento, o usuário declara ter autorização para compartilhá-lo e concorda que ele seja
+                armazenado somente até a conclusão da conferência, sendo <strong>apagado em seguida</strong>. Quando a
+                conferência for feita com auxílio de ferramenta automatizada, o resultado continua sendo uma avaliação
+                de caráter informativo, sujeita a erro.
+              </p>
+              <p>
+                <strong>Obrigação do interessado:</strong> antes de qualquer pagamento, sinal ou assinatura, cabe a quem
+                compra ou aluga obter a <strong>certidão atualizada da matrícula</strong> junto ao cartório competente e
+                as certidões pessoais do vendedor, preferencialmente com apoio de advogado ou corretor de sua confiança.
+                A ausência dessa conferência é risco assumido pelo interessado.
               </p>
             </section>
 
@@ -314,7 +330,20 @@ export default async function TermosPage() {
                 o montante efetivamente pago pelo usuário à Operadora nos 12 (doze) meses anteriores ao evento
                 que deu origem ao dano.
               </p>
-              <h3>11.3. Ressalva do CDC</h3>
+              <h3>11.3. Denúncias e remoção de conteúdo</h3>
+              <p>
+                Qualquer pessoa, usuária ou não, pode denunciar um anúncio pelo botão disponível na própria página do
+                imóvel. A Operadora analisa as denúncias recebidas e, entendendo haver indício de fraude, informação
+                falsa ou violação destes Termos, pode remover o anúncio e suspender a conta responsável, registrando
+                data, motivo e autor da decisão. A remoção independe de ordem judicial e não gera direito a reembolso
+                de planos ou destaques ao anunciante que deu causa à medida.
+              </p>
+              <p>
+                A Operadora conserva registros de acesso e de publicação pelo prazo do art. 15 da Lei nº 12.965/2014
+                e os fornece mediante requisição judicial, colaborando com autoridades na apuração de fraudes.
+              </p>
+
+              <h3>11.4. Ressalva do CDC</h3>
               <p>
                 Nada nestes Termos afasta a aplicação do Código de Defesa do Consumidor (Lei nº 8.078/1990)
                 nas relações de consumo, nem exclui ou limita direitos que não possam ser afastados por lei.
