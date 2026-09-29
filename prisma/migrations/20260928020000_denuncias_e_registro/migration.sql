@@ -1,5 +1,4 @@
 -- Denúncias de anúncio e registro de acesso (Marco Civil, art. 15)
-
 -- AlterTable
 ALTER TABLE "User" ADD COLUMN     "suspendedAt" TIMESTAMP(3),
 ADD COLUMN     "suspendedReason" TEXT;
@@ -40,4 +39,17 @@ CREATE TABLE "AccessLog" (
 CREATE INDEX "Report_status_createdAt_idx" ON "Report"("status", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "Report_propertyId_idx" ON 
+CREATE INDEX "Report_propertyId_idx" ON "Report"("propertyId");
+
+-- CreateIndex
+CREATE INDEX "AccessLog_createdAt_idx" ON "AccessLog"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "AccessLog_userId_createdAt_idx" ON "AccessLog"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "AccessLog_type_createdAt_idx" ON "AccessLog"("type", "createdAt");
+
+-- AddForeignKey
+ALTER TABLE "Report" ADD CONSTRAINT "Report_propertyId_fkey" FOREIGN KEY ("propertyId") REFERENCES "Property"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
