@@ -5,6 +5,7 @@ import { touchPresence } from '@/lib/presence'
 import Header from '@/components/layout/Header'
 import ConversationList from '@/components/mensagens/ConversationList'
 import ChatThread from '@/components/mensagens/ChatThread'
+import { propostasDaConversa, expirarPropostasVencidas } from '@/lib/propostas'
 
 export const metadata = { title: 'Mensagens — Immovi' }
 
@@ -25,6 +26,10 @@ export default async function ConversaPage({ params }: { params: Promise<{ id: s
       if (m.receiverId === userId && m.status === 'SENT') { m.status = 'READ'; m.readAt = now }
     })
   }
+
+  // Propostas da conversa; as vencidas passam a contar como expiradas ao abrir
+  await expirarPropostasVencidas(id)
+  const offers = await propostasDaConversa(id)
 
   // Lista ao lado só para quem participa (é a lista de conversas dele)
   const conversations = conversation.isParticipant ? await listConversations(userId) : []
@@ -68,6 +73,7 @@ export default async function ConversaPage({ params }: { params: Promise<{ id: s
               other={other}
               property={property}
               initialMessages={view.messages}
+              offers={offers}
               initialOtherLastSeenAt={view.otherLastSeenAt?.toISOString() ?? null}
               activityVisible={view.activityVisible}
             />

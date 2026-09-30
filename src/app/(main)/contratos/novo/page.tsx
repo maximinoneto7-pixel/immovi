@@ -13,7 +13,46 @@ export const metadata = { title: 'Novo contrato — Immovi' }
 
 const MODELOS = ['Promessa de Compra e Venda', 'Contrato de Locação', 'Contrato de Permuta', 'Cessão de Direitos']
 
-export default async function NovoContratoPage() {
+/**
+ * Preenchimento a partir da proposta aceita. Só quem participou da conversa vê os dados,
+ * e o vendedor é sempre o dono do anúncio.
+ */
+async function dadosDaProposta(propostaId: string, userId: string) {
+  const proposta = await prisma.offer.findUnique({
+    where: { id: propostaId },
+    include: {
+      property: { select: { title: true, address: true, city: true, state: true, description: true, ownerId: true } },
+      from: { select: { id: true, name: true, cpf: true } },
+      to: { select: { id: true, name: true, cpf: true } },
+      conversation: { select: { participants: { select: { userId: true } } } },
+    },
+  })
+  if (!proposta || proposta.status !== 'ACCEPTED') return null
+  if (!proposta.conversation.participants.some((p) => p.userId === userId)) return null
+
+  const donoId = proposta.property?.ownerId
+  const vendedor = proposta.from.id === donoId ? proposta.from : proposta.to
+  const comprador = proposta.from.id === donoId ? proposta.to : proposta.from
+
+  return {
+    titulo: proposta.property ? `Promessa de Compra e Venda — ${proposta.property.title}` : '',
+    vendedor: { nome: vendedor.name, cpf: vendedor.cpf || '' },
+    comprador: { nome: comprador.name, cpf: comprador.cpf || '' },
+    imovel: {
+      endereco: proposta.property?.address || '',
+      cidade: proposta.property?.city || '',
+      estado: proposta.property?.state || '',
+      descricao: proposta.property?.description?.slice(0, 500) || '',
+    },
+    valor: String(Math.round(proposta.amount)),
+  }
+}
+
+export default async function NovoContratoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ proposta?: string; type?: string }>
+}) {
   const session = await auth()
   if (!session?.user?.id) redirect('/login?redirect=/contratos/novo')
 
@@ -23,7 +62,10 @@ export default async function NovoContratoPage() {
   })
 
   if (canCreateContracts(user)) {
-    return <NewContractForm user={session.user as any} />
+    // Vindo de uma proposta aceita, o contrato já nasce com as partes, o imóvel e o valor
+    const { proposta: propostaId } = await searchParams
+    const preenchido = propostaId ? await dadosDaProposta(propostaId, session.user.id) : null
+    return <NewContractForm user={session.user as any} preenchido={preenchido} />
   }
 
   return (

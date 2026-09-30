@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { RETENCAO_DIAS } from '@/lib/registro'
+import { expirarPropostasVencidas } from '@/lib/propostas'
 
 // Manutenção diária (chamada pela Vercel). Só encerra o que já venceu: não recebe
 // parâmetro nenhum, então rodar fora de hora não muda nada além de arrumar o atraso.
@@ -46,6 +47,9 @@ export async function GET(request: Request) {
     await prisma.property.updateMany({ where: { id: { in: orfaos } }, data: { featured: false } })
   }
 
+  // ── Propostas com prazo vencido ───────────────────────────────────────────
+  const propostasExpiradas = await expirarPropostasVencidas()
+
   // ── Registro de visitas: guarda 90 dias, que é o que o painel usa ─────────
   const corte = new Date(agora.getTime() - 90 * 24 * 60 * 60 * 1000)
   const { count: visitasApagadas } = await prisma.pageView.deleteMany({ where: { createdAt: { lt: corte } } })
@@ -54,7 +58,7 @@ export async function GET(request: Request) {
   const corteRegistro = new Date(agora.getTime() - RETENCAO_DIAS * 24 * 60 * 60 * 1000)
   const { count: registrosApagados } = await prisma.accessLog.deleteMany({ where: { createdAt: { lt: corteRegistro } } })
 
-  const resultado = { destaquesEncerrados, destaquesSemFoguete: orfaos.length, visitasApagadas, registrosApagados, em: agora.toISOString() }
+  const resultado = { destaquesEncerrados, destaquesSemFoguete: orfaos.length, propostasExpiradas, visitasApagadas, registrosApagados, em: agora.toISOString() }
   console.log('[Manutenção diária]', JSON.stringify(resultado))
   return Response.json(resultado)
 }

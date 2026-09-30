@@ -763,3 +763,83 @@ export async function sendListingRemovedEmail(
 
   return send(to, `Seu anúncio saiu do ar: ${propertyTitle}`, html)
 }
+
+// ─── 20. Proposta recebida ───────────────────────────────────────────────────
+
+export async function sendOfferEmail(
+  to: string,
+  name: string,
+  d: {
+    tipo: 'proposta' | 'contraproposta'
+    de: string
+    valor: number
+    condicoes: string | null
+    recado: string | null
+    imovel: string
+    conversationId: string
+    prazo: Date
+  }
+) {
+  const money = (v: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
+
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 6px;">
+      ${d.tipo === 'contraproposta' ? 'Você recebeu uma contraproposta' : 'Você recebeu uma proposta'}
+    </h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 14px;">
+      ${d.de} enviou uma ${d.tipo} para <strong>${d.imovel}</strong>.
+    </p>
+
+    <div style="background:#eef2ff;border-radius:12px;padding:14px 16px;margin:0 0 12px;">
+      <div style="font-size:26px;font-weight:800;color:#3730a3;">${money(d.valor)}</div>
+      ${d.condicoes ? `<div style="font-size:13px;color:#4338ca;margin-top:2px;">${d.condicoes}</div>` : ''}
+      ${d.recado ? `<div style="font-size:13px;color:#374151;margin-top:8px;">“${d.recado}”</div>` : ''}
+      <div style="font-size:12px;color:#6b7280;margin-top:8px;">
+        Vale até ${d.prazo.toLocaleDateString('pt-BR')}.
+      </div>
+    </div>
+
+    ${btn(`${BASE_URL}/mensagens/${d.conversationId}`, 'Ver e responder')}
+
+    <p style="color:#9ca3af;font-size:11px;margin:8px 0 0;">
+      Responder não obriga ninguém: o negócio só se formaliza no contrato.
+    </p>
+  `, `${d.de}: ${money(d.valor)}`)
+
+  return send(to, `${d.tipo === 'contraproposta' ? 'Contraproposta' : 'Proposta'} de ${money(d.valor)} — ${d.imovel}`, html)
+}
+
+// ─── 21. Resposta à proposta ─────────────────────────────────────────────────
+
+export async function sendOfferAnswerEmail(
+  to: string,
+  name: string,
+  d: { aceita: boolean; de: string; valor: number; imovel: string; conversationId: string }
+) {
+  const money = (v: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
+
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 6px;">
+      ${d.aceita ? 'Sua proposta foi aceita' : 'Sua proposta foi recusada'}
+    </h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 12px;">
+      ${d.de} ${d.aceita ? 'aceitou' : 'recusou'} a proposta de <strong>${money(d.valor)}</strong> para ${d.imovel}.
+    </p>
+
+    ${d.aceita ? `<div style="background:#e6f5ea;border-radius:12px;padding:12px 14px;margin:0 0 12px;">
+      <div style="font-size:13px;color:#15803d;font-weight:700;margin-bottom:3px;">Próximo passo</div>
+      <div style="font-size:13px;color:#111827;">
+        Gere o contrato preenchido na própria conversa. Antes de assinar ou pagar, peça a certidão
+        atualizada da matrícula no cartório.
+      </div>
+    </div>` : ''}
+
+    ${btn(`${BASE_URL}/mensagens/${d.conversationId}`, d.aceita ? 'Abrir a conversa' : 'Fazer outra proposta')}
+  `, d.aceita ? 'Proposta aceita' : 'Proposta recusada')
+
+  return send(to, d.aceita ? `Proposta aceita: ${money(d.valor)}` : `Proposta recusada: ${money(d.valor)}`, html)
+}

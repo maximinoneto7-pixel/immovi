@@ -16,6 +16,7 @@ export type TipoRegistro =
   | 'DOCUMENTO_ENVIADO'
   | 'DOCUMENTO_CONFERIDO'
   | 'DENUNCIA'
+  | 'PROPOSTA'
 
 /** Tira o IP e o navegador de uma requisição, sem quebrar quando não houver */
 export function origemDa(request?: { headers: { get(nome: string): string | null } } | Headers | null) {

@@ -156,7 +156,16 @@ function ParteForm({
 
 type HeaderUser = React.ComponentProps<typeof Header>['user']
 
-function NovoContratoContent({ user }: { user: HeaderUser }) {
+/** Dados que vêm de uma proposta aceita, para o contrato já nascer preenchido */
+export interface ContratoPreenchido {
+  titulo: string
+  vendedor: { nome: string; cpf: string }
+  comprador: { nome: string; cpf: string }
+  imovel: { endereco: string; cidade: string; estado: string; descricao: string }
+  valor: string
+}
+
+function NovoContratoContent({ user, preenchido }: { user: HeaderUser; preenchido?: ContratoPreenchido | null }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
@@ -167,22 +176,29 @@ function NovoContratoContent({ user }: { user: HeaderUser }) {
   const defaultType = searchParams.get('type') || 'PROMESSA_COMPRA_VENDA'
 
   const [contractType, setContractType] = useState(defaultType)
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(preenchido?.titulo || '')
 
-  // Partes (arrays)
-  const [parteA, setParteA] = useState<Parte[]>([{ ...PARTE_VAZIA }])
-  const [parteB, setParteB] = useState<Parte[]>([{ ...PARTE_VAZIA }])
+  // Partes (arrays) — com proposta aceita, já vêm com nome e CPF de cada lado
+  const [parteA, setParteA] = useState<Parte[]>([
+    preenchido ? { ...PARTE_VAZIA, nome: preenchido.vendedor.nome, cpf: preenchido.vendedor.cpf } : { ...PARTE_VAZIA },
+  ])
+  const [parteB, setParteB] = useState<Parte[]>([
+    preenchido ? { ...PARTE_VAZIA, nome: preenchido.comprador.nome, cpf: preenchido.comprador.cpf } : { ...PARTE_VAZIA },
+  ])
 
   // Dados do imóvel
   const [property, setProperty] = useState({
-    propertyAddress: '', propertyCity: '', propertyState: '',
-    propertyDescription: '', propertyRegistration: '',
+    propertyAddress: preenchido?.imovel.endereco || '',
+    propertyCity: preenchido?.imovel.cidade || '',
+    propertyState: preenchido?.imovel.estado || '',
+    propertyDescription: preenchido?.imovel.descricao || '',
+    propertyRegistration: '',
   })
 
   // Valores por tipo
   const [values, setValues] = useState({
     // Compra e venda
-    totalPrice: '', signalAmount: '', remainingAmount: '',
+    totalPrice: preenchido?.valor || '', signalAmount: '', remainingAmount: '',
     paymentConditions: '', completionDate: '',
     paymentMethod: '',          // forma de pagamento do sinal
     remainingPaymentMethod: '', // forma de pagamento do saldo
@@ -526,10 +542,10 @@ function NovoContratoContent({ user }: { user: HeaderUser }) {
   )
 }
 
-export default function NewContractForm({ user }: { user: HeaderUser }) {
+export default function NewContractForm({ user, preenchido }: { user: HeaderUser; preenchido?: ContratoPreenchido | null }) {
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" /></div>}>
-      <NovoContratoContent user={user} />
+      <NovoContratoContent user={user} preenchido={preenchido} />
     </Suspense>
   )
 }

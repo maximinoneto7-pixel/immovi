@@ -6,6 +6,9 @@ import { ArrowLeft, Send, Shield, AlertCircle, Loader2, Home, Check, CheckCheck 
 import { cn, formatCurrency } from '@/lib/utils'
 import { isOnline, lastSeenLabel, whenLabel } from '@/lib/presence-labels'
 
+import OfferCard, { type ChatOffer } from './OfferCard'
+import NewOffer from './NewOffer'
+
 export interface ChatMessage {
   id: string
   content: string
@@ -28,6 +31,8 @@ interface ChatThreadProps {
     listingType: string; status: string; coverUrl: string | null
   } | null
   initialMessages: ChatMessage[]
+  /** Propostas da conversa, misturadas às mensagens pela hora */
+  offers?: ChatOffer[]
   /** "Visto por último" da outra pessoa — null quando a privacidade de um dos dois esconde */
   initialOtherLastSeenAt: string | null
   activityVisible: boolean
@@ -52,7 +57,8 @@ const PROPERTY_STATUS_LABEL: Record<string, string> = {
 }
 
 export default function ChatThread({
-  conversationId, viewerId, canSend, other, property, initialMessages, initialOtherLastSeenAt, activityVisible: initialActivityVisible,
+  conversationId, viewerId, canSend, other, property, initialMessages, offers = [],
+  initialOtherLastSeenAt, activityVisible: initialActivityVisible,
 }: ChatThreadProps) {
   const [messages, setMessages] = useState(initialMessages)
   const [otherLastSeenAt, setOtherLastSeenAt] = useState(initialOtherLastSeenAt)
@@ -134,6 +140,14 @@ export default function ChatThread({
     <PropertyLink property={property} price={propertyPrice} statusLabel={propertyStatus} />
   )
 
+  // Mensagens e propostas ordenadas juntas: a proposta aparece onde ela aconteceu
+  const linhaDoTempo = [
+    ...messages.map((m) => ({ tipo: 'msg' as const, em: new Date(m.createdAt), msg: m, proposta: null })),
+    ...offers.map((o) => ({ tipo: 'proposta' as const, em: new Date(o.createdAt), msg: null, proposta: o })),
+  ].sort((a, b) => a.em.getTime() - b.em.getTime())
+
+  const propostaAberta = offers.find((o) => o.status === 'PENDING' && new Date(o.expiresAt) > new Date())
+
   return (
     <section className="flex flex-col min-h-0 min-w-0 bg-gray-50">
       {/* Cabeçalho */}
@@ -176,13 +190,30 @@ export default function ChatThread({
           </p>
         </div>
 
-        {messages.length === 0 && (
+        {messages.length === 0 && offers.length === 0 && (
           <p className="text-center text-sm text-gray-400 py-10">Nenhuma mensagem ainda.</p>
         )}
-        {messages.map((m, i) => {
-          const date = new Date(m.createdAt)
-          const prev = messages[i - 1]
-          const newDay = !prev || dayKey(new Date(prev.createdAt)) !== dayKey(date)
+
+        {/* Mensagens e propostas na mesma linha do tempo, pela hora de cada uma */}
+        {linhaDoTempo.map((item, i) => {
+          const date = item.em
+          const prev = linhaDoTempo[i - 1]
+          const newDay = !prev || dayKey(prev.em) !== dayKey(date)
+
+          if (item.tipo === 'proposta' && item.proposta) {
+            return (
+              <div key={item.proposta.id} className="space-y-2">
+                {newDay && (
+                  <div className="flex justify-center pt-2">
+                    <span className="text-[11px] text-gray-500 bg-gray-200/70 px-2.5 py-0.5 rounded-full">{dayLabel(date)}</span>
+                  </div>
+                )}
+                <OfferCard offer={item.proposta} viewerId={viewerId} podeAgir={canSend} />
+              </div>
+            )
+          }
+
+          const m = item.msg!
           const mine = m.senderId === viewerId
           return (
             <div key={m.id} className="space-y-2">
@@ -214,6 +245,14 @@ export default function ChatThread({
       {/* Envio */}
       {canSend ? (
         <div className="bg-white border-t border-gray-100 px-4 py-3 space-y-2">
+          {/* Proposta: só faz sentido com anúncio ativo na conversa */}
+          {property && property.status === 'ACTIVE' && (!propostaAberta || propostaAberta.fromId !== viewerId) && (
+            <NewOffer
+              conversationId={conversationId}
+              temPropostaDoOutro={!!propostaAberta && propostaAberta.fromId !== viewerId}
+              referencia={property.listingType === 'RENT' ? property.rentPrice : property.price}
+            />
+          )}
           {error && (
             <div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-100 rounded-xl text-xs text-red-700">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />

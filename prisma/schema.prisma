@@ -66,6 +66,8 @@ model User {
   favorites            Favorite[]
   sentMessages         Message[]               @relation("SentMessages")
   receivedMessages     Message[]               @relation("ReceivedMessages")
+  offersMade           Offer[]                 @relation("OffersMade")
+  offersReceived       Offer[]                 @relation("OffersReceived")
   reviewsGiven         Review[]                @relation("ReviewsGiven")
   reviewsReceived      Review[]                @relation("ReviewsReceived")
   neighborhoodReviews  NeighborhoodReview[]
@@ -163,6 +165,7 @@ model Property {
   contracts     Contract[]
   documents     PropertyDocument[]
   reports       Report[]
+  offers        Offer[]
 
   // Índices das buscas: situação sempre entra, combinada com cidade, estado, tipo e data
   @@index([status, city])
@@ -214,6 +217,7 @@ model Conversation {
 
   participants ConversationParticipant[]
   messages     Message[]
+  offers       Offer[]
 }
 
 model ConversationParticipant {
@@ -387,6 +391,39 @@ model Contract {
 
 // ─── ANALYTICS ───────────────────────────────────────────────────
 
+// ─── PROPOSTAS ────────────────────────────────────────────────────
+
+/**
+ * Proposta feita dentro da conversa: valor, condições e prazo.
+ * Só uma fica em aberto por conversa; contrapor encerra a anterior.
+ */
+model Offer {
+  id         String   @id @default(cuid())
+  amount     Float
+  // À vista | Financiado | Entrada + parcelas | texto livre curto
+  conditions String?
+  message    String?
+  // PENDING | ACCEPTED | REJECTED | COUNTERED | EXPIRED | CANCELED
+  status     String   @default("PENDING")
+  expiresAt  DateTime
+  respondedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id])
+
+  fromId String
+  from   User   @relation("OffersMade", fields: [fromId], references: [id])
+  toId   String
+  to     User   @relation("OffersReceived", fields: [toId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@index([status, expiresAt])
+}
+
 // ─── DENÚNCIAS E REGISTRO DE PROVA ────────────────────────────────
 
 model Report {
@@ -419,7 +456,7 @@ model Report {
  */
 model AccessLog {
   id        String   @id @default(cuid())
-  // LOGIN | LOGIN_FALHA | ANUNCIO_CRIADO | ANUNCIO_EDITADO | DOCUMENTO_ENVIADO | DOCUMENTO_CONFERIDO | DENUNCIA
+  // LOGIN | LOGIN_FALHA | ANUNCIO_CRIADO | ANUNCIO_EDITADO | DOCUMENTO_ENVIADO | DOCUMENTO_CONFERIDO | DENUNCIA | PROPOSTA
   type      String
   userId    String?
   email     String?
