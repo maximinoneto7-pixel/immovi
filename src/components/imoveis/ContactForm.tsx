@@ -4,11 +4,16 @@ import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { MessageCircle, Calendar, Send, Shield, AlertCircle } from 'lucide-react'
 
+import ScheduleVisit, { type DiaDisponivel } from '@/components/imoveis/ScheduleVisit'
+
 interface ContactFormProps {
   propertyId: string
   ownerId: string
   ownerName: string
   isLoggedIn: boolean
+  /** Dias liberados pelo anunciante; vazio mantém o pedido escrito de antes */
+  diasDeVisita?: DiaDisponivel[]
+  recadoDeVisita?: string | null
 }
 
 export default function ContactForm({
@@ -16,6 +21,8 @@ export default function ContactForm({
   ownerId,
   ownerName,
   isLoggedIn,
+  diasDeVisita,
+  recadoDeVisita,
 }: ContactFormProps) {
   const [message, setMessage] = useState('')
   const messageRef = useRef<HTMLTextAreaElement>(null)
@@ -148,18 +155,29 @@ export default function ContactForm({
         {loading ? 'Enviando...' : 'Enviar mensagem'}
       </button>
 
-      {/* Preenche o pedido de visita e deixa pronto para enviar */}
-      <button
-        type="button"
-        onClick={() => {
-          setMessage('Gostaria de agendar uma visita. Qual sua disponibilidade?')
-          messageRef.current?.focus()
-        }}
-        className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm"
-      >
-        <Calendar className="w-4 h-4 text-indigo-500" />
-        Agendar visita
-      </button>
+      {/* Com horários marcados, o botão agenda de verdade; sem eles, pede pelo chat */}
+      <div className="mt-2">
+        {diasDeVisita && diasDeVisita.length > 0 ? (
+          <ScheduleVisit
+            propertyId={propertyId}
+            dias={diasDeVisita}
+            recado={recadoDeVisita}
+            isLoggedIn={isLoggedIn}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setMessage('Gostaria de agendar uma visita. Qual sua disponibilidade?')
+              messageRef.current?.focus()
+            }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors text-sm"
+          >
+            <Calendar className="w-4 h-4 text-indigo-500" />
+            Agendar visita
+          </button>
+        )}
+      </div>
 
       <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-400">
         <Shield className="w-3.5 h-3.5" />

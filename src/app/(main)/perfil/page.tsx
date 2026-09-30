@@ -5,8 +5,9 @@ import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import MyListings from '@/components/perfil/MyListings'
-import { Shield, Star, Home, PlusCircle, Edit, Phone, Mail, Calendar } from 'lucide-react'
+import { Shield, Star, Home, PlusCircle, Edit, Phone, Mail, Calendar, CalendarDays, ChevronRight } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { soData } from '@/lib/visitas'
 
 export default async function PerfilPage() {
   const session = await auth()
@@ -43,6 +44,15 @@ export default async function PerfilPage() {
   })
 
   if (!user) redirect('/')
+
+  // Visitas pela frente, dos dois lados (quem pediu e quem recebe)
+  const visitasProximas = await prisma.visit.count({
+    where: {
+      OR: [{ visitorId: user.id }, { ownerId: user.id }],
+      status: { in: ['PENDING', 'CONFIRMED'] },
+      date: { gte: soData(new Date()) },
+    },
+  })
 
   const avgRating = user.reviewsReceived.length
     ? user.reviewsReceived.reduce((a, r) => a + r.rating, 0) / user.reviewsReceived.length
@@ -149,6 +159,28 @@ export default async function PerfilPage() {
               </div>
             </div>
           </div>
+
+          {/* Visitas */}
+          <Link
+            href="/perfil/visitas"
+            className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6 hover:border-indigo-200 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+              <CalendarDays className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-gray-900 text-sm">Minhas visitas</div>
+              <div className="text-xs text-gray-500">
+                {visitasProximas === 0
+                  ? 'Nenhuma visita marcada'
+                  : `${visitasProximas} visita${visitasProximas > 1 ? 's' : ''} pela frente`}
+              </div>
+            </div>
+            {visitasProximas > 0 && (
+              <span className="px-2.5 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold">{visitasProximas}</span>
+            )}
+            <ChevronRight className="w-5 h-5 text-gray-300" />
+          </Link>
 
           {/* Listings */}
           <div id="meus-anuncios" className="mb-6 scroll-mt-20">

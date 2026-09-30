@@ -843,3 +843,90 @@ export async function sendOfferAnswerEmail(
 
   return send(to, d.aceita ? `Proposta aceita: ${money(d.valor)}` : `Proposta recusada: ${money(d.valor)}`, html)
 }
+
+// ─── 22. Pedido de visita ────────────────────────────────────────────────────
+
+export async function sendVisitRequestEmail(
+  to: string,
+  name: string,
+  d: { visitante: string; imovel: string; quando: string; recado: string | null }
+) {
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 6px;">Pedido de visita</h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 14px;">
+      <strong>${d.visitante}</strong> quer visitar <strong>${d.imovel}</strong>.
+    </p>
+
+    <div style="background:#eef2ff;border-radius:12px;padding:14px 16px;margin:0 0 12px;">
+      <div style="font-size:17px;font-weight:700;color:#3730a3;text-transform:capitalize;">${d.quando}</div>
+      ${d.recado ? `<div style="font-size:13px;color:#374151;margin-top:8px;">“${d.recado}”</div>` : ''}
+    </div>
+
+    ${btn(`${BASE_URL}/perfil/visitas`, 'Confirmar ou recusar')}
+
+    <p style="color:#9ca3af;font-size:11px;margin:8px 0 0;">
+      A visita só vale depois que você confirmar. O endereço completo é enviado ao visitante na confirmação.
+    </p>
+  `, `${d.visitante} quer visitar ${d.imovel}`)
+
+  return send(to, `Pedido de visita: ${d.imovel}`, html)
+}
+
+// ─── 23. Resposta ao pedido de visita ────────────────────────────────────────
+
+export async function sendVisitAnswerEmail(
+  to: string,
+  name: string,
+  d: { status: string; quem: string; imovel: string; quando: string; endereco: string | null; motivo: string | null }
+) {
+  const titulo =
+    d.status === 'CONFIRMED' ? 'Visita confirmada' :
+    d.status === 'REJECTED' ? 'Visita recusada' : 'Visita cancelada'
+
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 6px;">${titulo}</h1>
+    <p style="color:#6b7280;font-size:14px;margin:0 0 12px;">
+      ${d.quem} ${d.status === 'CONFIRMED' ? 'confirmou' : d.status === 'REJECTED' ? 'recusou' : 'cancelou'}
+      a visita em <strong>${d.imovel}</strong>.
+    </p>
+
+    <div style="background:${d.status === 'CONFIRMED' ? '#e6f5ea' : '#f9fafb'};border-radius:12px;padding:14px 16px;margin:0 0 12px;">
+      <div style="font-size:16px;font-weight:700;color:#111827;text-transform:capitalize;">${d.quando}</div>
+      ${d.endereco ? `<div style="font-size:13px;color:#374151;margin-top:6px;">📍 ${d.endereco}</div>` : ''}
+      ${d.motivo ? `<div style="font-size:13px;color:#374151;margin-top:8px;">“${d.motivo}”</div>` : ''}
+    </div>
+
+    ${btn(`${BASE_URL}/perfil/visitas`, 'Ver minhas visitas')}
+
+    ${d.status === 'CONFIRMED' ? `<p style="color:#9ca3af;font-size:11px;margin:8px 0 0;">
+      Combine pelo chat qualquer detalhe. Não pague nada antes de conferir a matrícula atualizada no cartório.
+    </p>` : ''}
+  `, titulo)
+
+  return send(to, `${titulo}: ${d.imovel}`, html)
+}
+
+// ─── 24. Lembrete da véspera ─────────────────────────────────────────────────
+
+export async function sendVisitReminderEmail(
+  to: string,
+  name: string,
+  d: { imovel: string; quando: string; comQuem: string; endereco: string | null }
+) {
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 6px;">Sua visita é amanhã</h1>
+    <div style="background:#eef2ff;border-radius:12px;padding:14px 16px;margin:12px 0;">
+      <div style="font-size:17px;font-weight:700;color:#3730a3;text-transform:capitalize;">${d.quando}</div>
+      <div style="font-size:14px;color:#111827;margin-top:4px;">${d.imovel}</div>
+      <div style="font-size:13px;color:#374151;margin-top:4px;">com ${d.comQuem}</div>
+      ${d.endereco ? `<div style="font-size:13px;color:#374151;margin-top:6px;">📍 ${d.endereco}</div>` : ''}
+    </div>
+    ${btn(`${BASE_URL}/perfil/visitas`, 'Ver detalhes')}
+    <p style="color:#9ca3af;font-size:11px;margin:8px 0 0;">Se não puder ir, cancele por aqui para avisar a outra pessoa.</p>
+  `, 'Sua visita é amanhã')
+
+  return send(to, `Lembrete: visita amanhã — ${d.imovel}`, html)
+}

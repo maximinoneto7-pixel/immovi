@@ -68,6 +68,8 @@ model User {
   receivedMessages     Message[]               @relation("ReceivedMessages")
   offersMade           Offer[]                 @relation("OffersMade")
   offersReceived       Offer[]                 @relation("OffersReceived")
+  visitsMade           Visit[]                 @relation("VisitsMade")
+  visitsReceived       Visit[]                 @relation("VisitsReceived")
   reviewsGiven         Review[]                @relation("ReviewsGiven")
   reviewsReceived      Review[]                @relation("ReviewsReceived")
   neighborhoodReviews  NeighborhoodReview[]
@@ -166,6 +168,8 @@ model Property {
   documents     PropertyDocument[]
   reports       Report[]
   offers        Offer[]
+  visits        Visit[]
+  visitAvailability VisitAvailability?
 
   // Índices das buscas: situação sempre entra, combinada com cidade, estado, tipo e data
   @@index([status, city])
@@ -422,6 +426,62 @@ model Offer {
 
   @@index([conversationId, createdAt])
   @@index([status, expiresAt])
+}
+
+// ─── VISITAS ──────────────────────────────────────────────────────
+
+/**
+ * Quando o anunciante pode receber visita: dias da semana e períodos.
+ * Um registro por imóvel; sem ele, o botão volta a ser o pedido escrito de antes.
+ */
+model VisitAvailability {
+  id         String   @id @default(cuid())
+  // Dias da semana liberados: 0 = domingo … 6 = sábado, separados por vírgula
+  weekdays   String   @default("1,2,3,4,5")
+  // MANHA | TARDE | NOITE, separados por vírgula
+  periods    String   @default("MANHA,TARDE")
+  // Aviso mínimo, em dias, entre o pedido e a visita
+  minDays    Int      @default(1)
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  propertyId String   @unique
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * Pedido de visita. O anunciante confirma cada um: ele precisa saber quem vai aparecer.
+ * Endereço completo só é liberado quando a visita está confirmada.
+ */
+model Visit {
+  id         String   @id @default(cuid())
+  // Dia da visita (sem hora) e período escolhido
+  date       DateTime
+  period     String
+  message    String?
+  // PENDING | CONFIRMED | REJECTED | CANCELED | DONE
+  status     String   @default("PENDING")
+  answerNote String?
+  respondedAt DateTime?
+  canceledById String?
+  remindedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  visitorId String
+  visitor   User   @relation("VisitsMade", fields: [visitorId], references: [id])
+  ownerId   String
+  owner     User   @relation("VisitsReceived", fields: [ownerId], references: [id])
+
+  conversationId String?
+
+  @@index([propertyId, date])
+  @@index([status, date])
+  @@index([visitorId, date])
+  @@index([ownerId, date])
 }
 
 // ─── DENÚNCIAS E REGISTRO DE PROVA ────────────────────────────────

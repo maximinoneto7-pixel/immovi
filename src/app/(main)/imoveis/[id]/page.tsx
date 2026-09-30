@@ -10,6 +10,8 @@ import PropertyGallery from '@/components/imoveis/PropertyGallery'
 import ContactForm from '@/components/imoveis/ContactForm'
 import DocumentVerification from '@/components/imoveis/DocumentVerification'
 import ManageListingPanel from '@/components/imoveis/ManageListingPanel'
+import VisitAvailabilityPanel from '@/components/imoveis/VisitAvailabilityPanel'
+import { diasDisponiveis } from '@/lib/visitas'
 import ListingActions from '@/components/imoveis/ListingActions'
 import ReportListing from '@/components/imoveis/ReportListing'
 import CompareBar from '@/components/imoveis/CompareBar'
@@ -99,6 +101,7 @@ export default async function PropertyDetailPage({
         orderBy: { createdAt: 'desc' },
         take: 5,
       },
+      visitAvailability: true,
       _count: { select: { favorites: true, conversations: true } },
     },
   })
@@ -108,6 +111,14 @@ export default async function PropertyDetailPage({
   // Atividade aproximada do anunciante ("Ativo hoje"), nunca o horário exato; respeita a privacidade dele
   const ownerActivity = property.owner.showActivity ? activityLabel(property.owner.lastSeenAt) : null
   const ownerOnline = !!ownerActivity && isOnline(property.owner.lastSeenAt)
+
+  // Dias que o comprador pode escolher, a partir do que o anunciante liberou
+  const diasDeVisita = property.visitAvailability
+    ? diasDisponiveis(property.visitAvailability).map((d) => ({
+        data: d.data.toISOString().slice(0, 10),
+        periodos: d.periodos,
+      }))
+    : []
 
   // "Costuma responder em até 1 hora": só aparece com conversas suficientes
   const ownerResponse = responseLabel(await responseSpeedFor(property.owner))
@@ -541,6 +552,14 @@ export default async function PropertyDetailPage({
                 />
               )}
 
+              {/* Horários de visita: só o dono define */}
+              {canManage && (
+                <VisitAvailabilityPanel
+                  propertyId={property.id}
+                  inicial={property.visitAvailability}
+                />
+              )}
+
               {/* Anunciante */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                   <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -605,6 +624,8 @@ export default async function PropertyDetailPage({
                   ownerId={property.owner.id}
                   ownerName={property.owner.name}
                   isLoggedIn={!!session}
+                  diasDeVisita={diasDeVisita}
+                  recadoDeVisita={property.visitAvailability?.note ?? null}
                 />
               ))}
 
