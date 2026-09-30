@@ -21,7 +21,7 @@ export default async function AdminPage() {
 
   const [
     totalUsers, newUsersThisWeek, totalProperties, activeProperties,
-    totalMessages, totalConversations, totalSubscriptions, revenueData,
+    totalMessages, totalConversations, assinantesAtivos, revenueData, boostRevenueData,
     recentUsers, recentProperties, pendingReports,
   ] = await Promise.all([
     prisma.user.count(),
@@ -30,8 +30,14 @@ export default async function AdminPage() {
     prisma.property.count({ where: { status: 'ACTIVE' } }),
     prisma.message.count(),
     prisma.conversation.count(),
-    prisma.subscription.count({ where: { status: 'ACTIVE' } }),
+    // Assinante é quem tem plano pago em vigor — mesmo critério de /planos e /pagamentos.
+    // A linha da Subscription vira CANCELED quando a pessoa cancela a renovação,
+    // mas o acesso (e a assinatura) continua até o fim do período já pago.
+    prisma.user.count({
+      where: { planId: { notIn: ['BASIC'] }, NOT: { planId: null }, planExpiresAt: { gt: new Date() } },
+    }),
     prisma.subscription.aggregate({ _sum: { amountPaid: true } }),
+    prisma.propertyBoost.aggregate({ _sum: { amountPaid: true } }),
     prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
       take: 8,
@@ -68,19 +74,22 @@ export default async function AdminPage() {
     BUYER: 'Compradores', SELLER: 'Vendedores', AGENT: 'Corretores', ADMIN: 'Admins',
   }
 
-  const revenue = revenueData._sum.amountPaid || 0
+  // Receita = assinaturas + Foguetes (os destaques também entram no caixa)
+  const revenue = (revenueData._sum.amountPaid || 0) + (boostRevenueData._sum.amountPaid || 0)
 
   const since14 = new Date(Date.now() - 13 * 24 * 60 * 60 * 1000)
   since14.setHours(0, 0, 0, 0)
 
-  const [newUsersRaw, newPropertiesRaw, revenueRaw] = await Promise.all([
+  const [newUsersRaw, newPropertiesRaw, assinaturasRaw, destaquesRaw] = await Promise.all([
     prisma.user.findMany({ where: { createdAt: { gte: since14 } }, select: { createdAt: true } }),
     prisma.property.findMany({ where: { createdAt: { gte: since14 } }, select: { createdAt: true } }),
     prisma.subscription.findMany({ where: { createdAt: { gte: since14 } }, select: { createdAt: true, amountPaid: true } }),
+    prisma.propertyBoost.findMany({ where: { createdAt: { gte: since14 } }, select: { createdAt: true, amountPaid: true } }),
   ])
 
   const usersEvolution = bucketByDay(newUsersRaw, (u) => u.createdAt, 14)
   const propertiesEvolution = bucketByDay(newPropertiesRaw, (p) => p.createdAt, 14)
+  const revenueRaw = [...assinaturasRaw, ...destaquesRaw]
   const revenueEvolution = bucketByDay(revenueRaw, (s) => s.createdAt, 14, (s) => s.amountPaid)
 
   return (
@@ -90,7 +99,7 @@ export default async function AdminPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
             <div>
               <div className="flex items-center gap-2 text-indigo-600 text-sm font-semibold mb-1">
                 <Shield className="w-4 h-4" />
@@ -98,23 +107,23 @@ export default async function AdminPage() {
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/admin/usuarios" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-end">
+              <Link href="/admin/usuarios" className="flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <Users className="w-4 h-4" /> Usuários
               </Link>
-              <Link href="/admin/anuncios" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+              <Link href="/admin/anuncios" className="flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <Home className="w-4 h-4" /> Anúncios
               </Link>
-              <Link href="/admin/denuncias" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+              <Link href="/admin/denuncias" className="flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <Flag className="w-4 h-4" /> Denúncias
               </Link>
-              <Link href="/admin/documentos" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+              <Link href="/admin/documentos" className="flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <FileText className="w-4 h-4" /> Matrículas
               </Link>
-              <Link href="/admin/conversas" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+              <Link href="/admin/conversas" className="flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" /> Conversas
               </Link>
-              <Link href="/admin/trafego" className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+              <Link href="/admin/trafego" className="flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" /> Tráfego
               </Link>
             </div>
@@ -126,7 +135,7 @@ export default async function AdminPage() {
               { label: 'Total de Usuários', value: totalUsers, sub: `+${newUsersThisWeek} esta semana`, icon: Users, color: 'blue', href: '/admin/usuarios' },
               { label: 'Imóveis Ativos', value: activeProperties, sub: `${totalProperties} total`, icon: Home, color: 'green', href: '/admin/anuncios' },
               { label: 'Mensagens Trocadas', value: totalMessages.toLocaleString('pt-BR'), sub: `${totalConversations} conversas`, icon: MessageCircle, color: 'violet', href: '/admin/conversas' },
-              { label: 'Receita Total', value: formatCurrency(revenue), sub: `${totalSubscriptions} assinaturas ativas`, icon: TrendingUp, color: 'amber', href: '/pagamentos' },
+              { label: 'Receita Total', value: formatCurrency(revenue), sub: assinantesAtivos === 1 ? '1 assinatura ativa' : `${assinantesAtivos} assinaturas ativas`, icon: TrendingUp, color: 'amber', href: '/pagamentos' },
             ].map((kpi) => (
               <Link key={kpi.label} href={kpi.href}
                 className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow group">
