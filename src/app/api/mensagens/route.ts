@@ -7,32 +7,6 @@ import { touchPresence } from '@/lib/presence'
 import { emailGateOpen, UNVERIFIED_MESSAGE_ERROR } from '@/lib/email-verification'
 import { isOnline } from '@/lib/presence-labels'
 
-// Padrões que indicam tentativa de compartilhar telefone fora da plataforma
-const PHONE_PATTERNS = [
-  /\(?\d{2}\)?\s?\d{4,5}[-.\s]?\d{4}/,          // telefones BR
-  /\+\s*55\s*\(?\d{2}\)?\s?\d{4,5}[-.\s]?\d{4}/, // +55 ...
-  /\d{10,11}/,                                     // sequência de dígitos
-  /whatsapp\.com\/[\w+]/i,                          // link whatsapp
-]
-
-const CONTACT_REDIRECT_PATTERNS = [
-  /me\s+(liga|chama|add|manda)\s+(mensagem|msg|zap|wpp|whats)/i,
-  /meu\s+(n[uú]mero|tel\.?|fone|celular|contato|zap|wpp)/i,
-  /passa\s+(o\s+)?(n[uú]mero|contato|tel\.?|zap|wpp|whats)/i,
-  /continua(r|mos)?\s+(f(o|u)ra|pelo\s+zap|no\s+whats)/i,
-  /combina\s+(fora|pelo\s+zap|pelo\s+whats)/i,
-]
-
-function detectPhoneViolation(text: string): string | null {
-  for (const pattern of PHONE_PATTERNS) {
-    if (pattern.test(text)) return 'phone'
-  }
-  for (const pattern of CONTACT_REDIRECT_PATTERNS) {
-    if (pattern.test(text)) return 'redirect'
-  }
-  return null
-}
-
 export async function POST(request: Request) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -55,20 +29,9 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Não pode enviar mensagem para si mesmo.' }, { status: 400 })
   }
 
-  // Verificação de segurança: bloquear telefones e redirecionamentos
-  const violation = detectPhoneViolation(content.trim())
-  if (violation === 'phone') {
-    return Response.json({
-      error: '🛡️ Por sua segurança, não é permitido compartilhar números de telefone no chat. Continue a negociação aqui na plataforma para proteção de ambas as partes.',
-      blocked: true,
-    }, { status: 400 })
-  }
-  if (violation === 'redirect') {
-    return Response.json({
-      error: '🛡️ Por sua segurança, pedidos para continuar a conversa fora da plataforma não são permitidos. O chat da Immovi garante proteção para comprador e vendedor.',
-      blocked: true,
-    }, { status: 400 })
-  }
+  // Telefone e WhatsApp são liberados: quem anuncia paga pelo anúncio, não pela venda,
+  // e prender a conversa aqui só atrapalha quem quer fechar negócio. O que protege as
+  // partes é o aviso de nunca pagar antes de visitar e conferir a matrícula, não a mordaça.
 
   let conversation = await prisma.conversation.findFirst({
     where: {

@@ -53,7 +53,7 @@ export default function ContactForm({
         setSent(true)
         setMessage('')
       } else {
-        // Ex.: mensagem bloqueada por conter telefone
+        // Ex.: e-mail ainda não confirmado, ou anúncio fora do ar
         setError(data.error || 'Não foi possível enviar. Tente novamente.')
       }
     } catch {

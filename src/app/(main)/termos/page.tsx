@@ -210,10 +210,15 @@ export default async function TermosPage() {
               </p>
               <p>Para proteção de todos os usuários, a Plataforma:</p>
               <ul>
-                <li>Detecta e bloqueia tentativas de compartilhamento de dados de contato (telefone, WhatsApp) no chat antes do momento adequado</li>
-                <li>Monitora conversas para identificar comportamentos fraudulentos ou abusivos</li>
+                <li>Permite que os usuários troquem dados de contato (telefone, WhatsApp) livremente, a critério de cada um, dentro ou fora do chat</li>
+                <li>Monitora conversas para identificar comportamentos fraudulentos ou abusivos, em especial pedidos de pagamento antes da visita ao imóvel</li>
                 <li>Mantém histórico das conversas por 2 anos para fins de segurança</li>
               </ul>
+              <p>
+                A Immovi <strong>não intermedeia pagamentos</strong> entre usuários e <strong>jamais solicita</strong>
+                depósito, sinal, caução ou taxa de reserva em nome de anunciantes. Nenhum valor deve ser pago antes
+                da visita ao imóvel e da conferência da matrícula no cartório de registro competente.
+              </p>
               <p>
                 Os usuários são responsáveis por verificar a documentação do imóvel, a idoneidade da contraparte
                 e as condições da transação antes de formalizar qualquer acordo. Recomendamos fortemente a

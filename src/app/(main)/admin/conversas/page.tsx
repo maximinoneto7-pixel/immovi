@@ -7,19 +7,21 @@ import Footer from '@/components/layout/Footer'
 import { MessageCircle, ArrowLeft, AlertTriangle, Shield, Home, Eye } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
-// Regex para detectar tentativas de compartilhar telefone
-const PHONE_REGEX = /(\(?\d{2}\)?\s?)?(\d{4,5}[-.\s]?\d{4})/g
-const PHONE_PATTERNS = [
-  /\(?\d{2}\)?\s?\d{4,5}[-.\s]?\d{4}/,
-  /\d{11}/,
-  /whatsapp/i,
-  /zap\s*zap/i,
-  /meu\s*(n[uú]mero|tel|fone|contato)/i,
-  /me\s*(liga|chama|add)/i,
+// Trocar telefone e WhatsApp é normal e liberado. O que merece o olho do admin é
+// pedido de dinheiro antes da visita — o começo de praticamente todo golpe imobiliário.
+const RISCO_PATTERNS = [
+  /\bpix\b/i,
+  /dep[oó]sit/i,
+  /transfer[êe]nci/i,
+  /\bsinal\b/i,
+  /taxa\s+de\s+(reserva|cadastro|vistoria|an[aá]lise|contrato|visita)/i,
+  /reserv(a|ar)\s+(o\s+)?im[oó]vel/i,
+  /antecipad/i,
+  /adiantad/i,
 ]
 
-function hasPhoneAttempt(text: string): boolean {
-  return PHONE_PATTERNS.some((r) => r.test(text))
+function temRiscoDeGolpe(text: string): boolean {
+  return RISCO_PATTERNS.some((r) => r.test(text))
 }
 
 export default async function AdminConversasPage({
@@ -59,7 +61,7 @@ export default async function AdminConversasPage({
 
   // Detectar conversas com tentativas de compartilhar telefone
   const flagged = conversations.filter((conv) =>
-    conv.messages.some((m) => hasPhoneAttempt(m.content))
+    conv.messages.some((m) => temRiscoDeGolpe(m.content))
   )
 
   const displayConversations = showAlerts ? flagged : conversations
@@ -104,10 +106,10 @@ export default async function AdminConversasPage({
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
             <Shield className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <div>
-              <div className="font-semibold text-amber-900 text-sm">Política de proteção da plataforma</div>
+              <div className="font-semibold text-amber-900 text-sm">O que o painel vigia</div>
               <p className="text-xs text-amber-700 mt-1">
-                O sistema detecta automaticamente tentativas de compartilhamento de telefone, WhatsApp ou redirecionamento de negócios para fora da plataforma.
-                Conversas marcadas com ⚠️ contêm padrões suspeitos e devem ser revisadas.
+                Telefone e WhatsApp são liberados — ganhamos pelo anúncio, não pela venda, e prender a conversa aqui só atrapalha quem quer fechar negócio.
+                O que o sistema marca com ⚠️ é conversa que fala em PIX, depósito, sinal ou taxa: dinheiro pedido antes da visita é como começa quase todo golpe.
               </p>
             </div>
           </div>
@@ -123,7 +125,7 @@ export default async function AdminConversasPage({
               </div>
             ) : (
               displayConversations.map((conv) => {
-                const isFlagged = conv.messages.some((m) => hasPhoneAttempt(m.content))
+                const isFlagged = conv.messages.some((m) => temRiscoDeGolpe(m.content))
                 const [p1, p2] = conv.participants
 
                 return (
@@ -137,7 +139,7 @@ export default async function AdminConversasPage({
                         {isFlagged && (
                           <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">
                             <AlertTriangle className="w-3.5 h-3.5" />
-                            ALERTA: Possível vazamento de contato
+                            ALERTA: Pedido de pagamento antes da visita
                           </div>
                         )}
                         <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -161,7 +163,7 @@ export default async function AdminConversasPage({
                     {/* Últimas mensagens */}
                     <div className="divide-y divide-gray-50">
                       {[...conv.messages].reverse().map((msg) => {
-                        const suspicious = hasPhoneAttempt(msg.content)
+                        const suspicious = temRiscoDeGolpe(msg.content)
                         return (
                           <div key={msg.id} className={`px-5 py-3 ${suspicious ? 'bg-red-50' : ''}`}>
                             <div className="flex items-center gap-2 mb-1">
@@ -170,7 +172,7 @@ export default async function AdminConversasPage({
                               {suspicious && (
                                 <span className="flex items-center gap-1 text-xs text-red-600 font-medium">
                                   <AlertTriangle className="w-3 h-3" />
-                                  Possível telefone
+                                  Fala em dinheiro
                                 </span>
                               )}
                             </div>

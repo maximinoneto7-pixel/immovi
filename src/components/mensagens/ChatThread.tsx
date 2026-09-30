@@ -281,7 +281,7 @@ export default function ChatThread({
             </button>
           </div>
           <p className="text-[11px] text-gray-400">
-            Por segurança, números de telefone e pedidos para continuar fora da plataforma são bloqueados.
+            Combine como preferir, aqui ou pelo WhatsApp. Só não pague nada antes de visitar o imóvel e conferir a matrícula no cartório.
           </p>
         </div>
       ) : (
