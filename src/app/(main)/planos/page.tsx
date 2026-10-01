@@ -18,7 +18,7 @@ export default async function PlanosPage() {
   const session = await auth()
 
   let currentPlan = 'BASIC'
-  let motivoDoTeste: string | null = 'Entre na sua conta para ativar a oferta.'
+  let motivoDoTeste: string | null = 'Entre na sua conta para começar.'
   const vagas = await vagasRestantes()
 
   if (session?.user?.id) {

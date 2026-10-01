@@ -16,7 +16,7 @@ import { TRIAL_DIAS, TRIAL_PLANO, TRIAL_VAGAS, motivoParaNaoResgatar } from '@/l
  */
 export async function resgatarTeste() {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Entre na sua conta para ativar a oferta.' }
+  if (!session?.user?.id) return { error: 'Entre na sua conta para começar.' }
   const userId = session.user.id
 
   // E-mail confirmado é a trava contra alguém queimar as 50 vagas com contas falsas

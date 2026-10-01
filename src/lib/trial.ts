@@ -36,7 +36,7 @@ export function jaResgatou(user: TrialHolder | null | undefined): boolean {
  * Quem já paga não resgata: seria trocar dinheiro por brinde.
  */
 export function motivoParaNaoResgatar(user: TrialHolder | null | undefined): string | null {
-  if (!user) return 'Entre na sua conta para ativar a oferta.'
+  if (!user) return 'Entre na sua conta para começar.'
   if (jaResgatou(user)) return 'Você já usou os 60 dias de teste.'
   if (user.planId && user.planId !== 'BASIC' && user.planExpiresAt && user.planExpiresAt > new Date()) {
     return 'Você já tem um plano pago em vigor.'
