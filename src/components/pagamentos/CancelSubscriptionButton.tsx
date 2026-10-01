@@ -5,11 +5,22 @@ import { useRouter } from 'next/navigation'
 import { cancelSubscription } from '@/app/actions/subscription'
 import { AlertCircle, Loader2, XCircle } from 'lucide-react'
 
-export default function CancelSubscriptionButton() {
+export default function CancelSubscriptionButton({
+  planoNome,
+  validoAte,
+}: {
+  planoNome: string
+  /** Até quando o período já pago vai; vem como ISO para não quebrar na serialização */
+  validoAte: string | null
+}) {
   const router = useRouter()
   const [confirming, setConfirming] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
+
+  const dataFinal = validoAte
+    ? new Date(validoAte).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' })
+    : null
 
   const handleCancel = () => {
     setError('')
@@ -45,7 +56,14 @@ export default function CancelSubscriptionButton() {
         </div>
       )}
       <p className="text-sm text-red-800">
-        Tem certeza? A renovação automática será interrompida, mas seu plano continua ativo até o fim do período já pago.
+        {dataFinal ? (
+          <>
+            Tem certeza? A cobrança automática para agora, mas você continua com o{' '}
+            <strong>{planoNome}</strong> até <strong>{dataFinal}</strong> — o período que já está pago.
+          </>
+        ) : (
+          'Tem certeza? A renovação automática será interrompida, mas seu plano continua ativo até o fim do período já pago.'
+        )}
       </p>
       <div className="flex gap-2">
         <button

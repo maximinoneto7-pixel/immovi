@@ -144,11 +144,21 @@ export default async function PagamentosPage() {
                   {planInfo?.preco ? <span className="text-sm font-normal text-gray-400">/mês</span> : ''}
                 </div>
                 {user?.planExpiresAt && currentPlan !== 'BASIC' && (
-                  <div className="text-xs text-gray-400 mt-2">
-                    {isCanceledButStillValid
-                      ? <span className="text-amber-600 font-medium">Cancelado — ativo até {formatDate(user.planExpiresAt)}</span>
-                      : `Renova em ${formatDate(user.planExpiresAt)}`}
-                  </div>
+                  isCanceledButStillValid ? (
+                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-left">
+                      <div className="flex items-center gap-1.5 text-amber-900 text-sm font-semibold">
+                        <Clock className="w-4 h-4" />
+                        Assinatura cancelada
+                      </div>
+                      <p className="text-xs text-amber-800 mt-1">
+                        Você continua com o {planInfo?.nome} até <strong>{formatDate(user.planExpiresAt)}</strong>,
+                        que é o período já pago. Depois dessa data a conta volta para o plano Básico,
+                        e nenhuma nova cobrança será feita.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-400 mt-2">Renova em {formatDate(user.planExpiresAt)}</div>
+                  )
                 )}
               </div>
 
@@ -162,7 +172,10 @@ export default async function PagamentosPage() {
               </div>
 
               {!isAdmin && currentPlan !== 'BASIC' && hasActiveRenewal && (
-                <CancelSubscriptionButton />
+                <CancelSubscriptionButton
+                  planoNome={planInfo?.nome || 'plano'}
+                  validoAte={user?.planExpiresAt ? user.planExpiresAt.toISOString() : null}
+                />
               )}
 
               {currentPlan === 'BASIC' && (
