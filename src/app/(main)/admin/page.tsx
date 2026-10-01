@@ -36,8 +36,10 @@ export default async function AdminPage() {
     prisma.user.count({
       where: { planId: { notIn: ['BASIC'] }, NOT: { planId: null }, planExpiresAt: { gt: new Date() } },
     }),
-    prisma.subscription.aggregate({ _sum: { amountPaid: true } }),
-    prisma.propertyBoost.aggregate({ _sum: { amountPaid: true } }),
+    // Só entra no caixa o que tem id de pagamento: a linha PENDING criada no checkout
+    // já nasce com o valor esperado em amountPaid e contaria a mesma compra duas vezes.
+    prisma.subscription.aggregate({ _sum: { amountPaid: true }, where: { stripeInvoiceId: { not: null } } }),
+    prisma.propertyBoost.aggregate({ _sum: { amountPaid: true }, where: { stripePaymentIntentId: { not: null } } }),
     prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
       take: 8,
@@ -83,8 +85,14 @@ export default async function AdminPage() {
   const [newUsersRaw, newPropertiesRaw, assinaturasRaw, destaquesRaw] = await Promise.all([
     prisma.user.findMany({ where: { createdAt: { gte: since14 } }, select: { createdAt: true } }),
     prisma.property.findMany({ where: { createdAt: { gte: since14 } }, select: { createdAt: true } }),
-    prisma.subscription.findMany({ where: { createdAt: { gte: since14 } }, select: { createdAt: true, amountPaid: true } }),
-    prisma.propertyBoost.findMany({ where: { createdAt: { gte: since14 } }, select: { createdAt: true, amountPaid: true } }),
+    prisma.subscription.findMany({
+      where: { createdAt: { gte: since14 }, stripeInvoiceId: { not: null } },
+      select: { createdAt: true, amountPaid: true },
+    }),
+    prisma.propertyBoost.findMany({
+      where: { createdAt: { gte: since14 }, stripePaymentIntentId: { not: null } },
+      select: { createdAt: true, amountPaid: true },
+    }),
   ])
 
   const usersEvolution = bucketByDay(newUsersRaw, (u) => u.createdAt, 14)
@@ -155,7 +163,7 @@ export default async function AdminPage() {
           </div>
 
           {/* Evolução (últimos 14 dias) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-start">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Users className="w-4 h-4 text-indigo-500" /> Novos usuários (14 dias)
@@ -176,7 +184,7 @@ export default async function AdminPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-start">
             {/* Usuários por perfil */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -220,6 +228,9 @@ export default async function AdminPage() {
                     </div>
                   )
                 })}
+                {propertiesByType.length === 0 && (
+                  <p className="text-sm text-gray-400">Nenhum anúncio ativo ainda.</p>
+                )}
               </div>
             </div>
 
@@ -255,7 +266,7 @@ export default async function AdminPage() {
           </div>
 
           {/* Usuários recentes */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <h2 className="font-bold text-gray-900 flex items-center gap-2">
@@ -324,6 +335,9 @@ export default async function AdminPage() {
                     </div>
                   </div>
                 ))}
+                {recentProperties.length === 0 && (
+                  <p className="px-5 py-6 text-sm text-gray-400">Nenhum anúncio publicado ainda.</p>
+                )}
               </div>
             </div>
           </div>

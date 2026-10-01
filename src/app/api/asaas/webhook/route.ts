@@ -100,11 +100,10 @@ export async function POST(request: Request) {
             where: { id: sub.id },
             data: { status: 'CANCELED', canceledAt: new Date() },
           })
-          await prisma.user.update({
-            where: { id: sub.userId },
-            data: { planId: null, planExpiresAt: null },
-          })
-          console.log(`❌ Assinatura cancelada: ${sub.userId}`)
+          // O plano NÃO é zerado aqui: quem cancela já pagou o período corrente e
+          // continua com acesso até a data de expiração. Como todo o site checa
+          // planExpiresAt > hoje, o acesso cai sozinho no vencimento.
+          console.log(`❌ Assinatura cancelada (acesso mantido até ${sub.expiresAt.toISOString().slice(0, 10)}): ${sub.userId}`)
         }
         break
       }
