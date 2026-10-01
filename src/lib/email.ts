@@ -930,3 +930,91 @@ export async function sendVisitReminderEmail(
 
   return send(to, `Lembrete: visita amanhã — ${d.imovel}`, html)
 }
+
+// ── 25. Oferta de abertura: teste ativado ────────────────────────────────────
+export async function sendTrialStartedEmail(to: string, name: string, ate: Date) {
+  const quando = ate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' })
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 6px;">Seus 60 dias de Destaque começaram</h1>
+    <p style="color:#374151;font-size:14px;margin:0 0 12px;">
+      Você está entre os 50 primeiros. Até <strong>${quando}</strong> sua conta tem o plano Destaque
+      completo, sem cartão e sem cobrança.
+    </p>
+    <div style="background:#eef2ff;border-radius:12px;padding:14px 16px;margin:12px 0;">
+      <div style="font-size:13px;color:#3730a3;font-weight:700;margin-bottom:6px;">O que você ganhou</div>
+      <div style="font-size:13px;color:#374151;line-height:1.7;">
+        Até 5 anúncios ativos<br>
+        Selo de anúncio verificado<br>
+        1 anúncio em destaque e 1 Foguete por mês<br>
+        Prioridade nos resultados de busca
+      </div>
+    </div>
+    <p style="color:#374151;font-size:14px;margin:0 0 12px;">
+      Avisamos uma semana antes de acabar. Se você não quiser continuar, não precisa fazer nada:
+      a conta volta sozinha para o plano Básico, sem nenhuma cobrança.
+    </p>
+    ${btn(`${BASE_URL}/imoveis/novo`, 'Publicar um anúncio')}
+  `, 'Seus 60 dias de Destaque começaram')
+
+  return send(to, 'Seus 60 dias de Destaque começaram', html)
+}
+
+// ── 26. Plano vencendo em uma semana ─────────────────────────────────────────
+export async function sendPlanEndingEmail(
+  to: string,
+  name: string,
+  d: { plano: string; ate: Date; teste: boolean; anunciosAtivos: number; limiteDepois: number }
+) {
+  const quando = d.ate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' })
+  const sobra = Math.max(0, d.anunciosAtivos - d.limiteDepois)
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 6px;">
+      ${d.teste ? 'Seu teste termina em 7 dias' : 'Seu plano vence em 7 dias'}
+    </h1>
+    <p style="color:#374151;font-size:14px;margin:0 0 12px;">
+      O ${d.plano} vale até <strong>${quando}</strong>. Depois dessa data a conta volta para o
+      plano Básico, que permite ${d.limiteDepois} anúncio${d.limiteDepois > 1 ? 's' : ''} ativo${d.limiteDepois > 1 ? 's' : ''}.
+    </p>
+    ${sobra > 0 ? `
+    <div style="background:#fffbeb;border-left:3px solid #d97706;border-radius:0 10px 10px 0;padding:12px 14px;margin:12px 0;">
+      <div style="font-size:13px;color:#92400e;font-weight:700;margin-bottom:4px;">Atenção aos seus anúncios</div>
+      <div style="font-size:13px;color:#78350f;">
+        Você tem ${d.anunciosAtivos} anúncios no ar. Na data acima, ${sobra} ${sobra > 1 ? 'serão pausados' : 'será pausado'} —
+        mantemos ativo${d.limiteDepois > 1 ? 's os' : ' o'} mais visto${d.limiteDepois > 1 ? 's' : ''}. Nada é apagado: basta
+        reativar quando quiser, ou assinar para manter todos no ar.
+      </div>
+    </div>` : ''}
+    ${btn(`${BASE_URL}/planos`, 'Ver planos')}
+    <p style="color:#9ca3af;font-size:11px;margin:8px 0 0;">Se não quiser continuar, não precisa fazer nada — nenhuma cobrança será feita.</p>
+  `, d.teste ? 'Seu teste termina em 7 dias' : 'Seu plano vence em 7 dias')
+
+  return send(to, d.teste ? 'Seu teste termina em 7 dias' : 'Seu plano vence em 7 dias', html)
+}
+
+// ── 27. Plano venceu e anúncios excedentes foram pausados ────────────────────
+export async function sendPlanEndedEmail(
+  to: string,
+  name: string,
+  d: { plano: string; pausados: number; mantidos: number }
+) {
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${name}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 6px;">Sua conta voltou para o plano Básico</h1>
+    <p style="color:#374151;font-size:14px;margin:0 0 12px;">
+      O período do ${d.plano} terminou e nenhuma cobrança foi feita.
+    </p>
+    ${d.pausados > 0 ? `
+    <div style="background:#fffbeb;border-left:3px solid #d97706;border-radius:0 10px 10px 0;padding:12px 14px;margin:12px 0;">
+      <div style="font-size:13px;color:#78350f;">
+        ${d.pausados} ${d.pausados > 1 ? 'anúncios foram pausados' : 'anúncio foi pausado'} e
+        ${d.mantidos > 1 ? `os ${d.mantidos} mais vistos continuam` : 'o mais visto continua'} no ar.
+        Nenhum foi apagado — as fotos e os textos estão guardados.
+      </div>
+    </div>` : ''}
+    ${btn(`${BASE_URL}/planos`, 'Voltar a ter todos no ar')}
+  `, 'Sua conta voltou para o plano Básico')
+
+  return send(to, 'Sua conta voltou para o plano Básico', html)
+}

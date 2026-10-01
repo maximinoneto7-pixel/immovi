@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PlansClient from '@/components/pagamentos/PlansClient'
+import TrialOffer from '@/components/pagamentos/TrialOffer'
+import { vagasRestantes, motivoParaNaoResgatar } from '@/lib/trial'
 import { PLANOS } from '@/lib/stripe'
 import { CheckCircle2, Zap, Shield, Building2 } from 'lucide-react'
 import { sincronizarPagamentos } from '@/lib/asaas-sync'
@@ -16,17 +18,21 @@ export default async function PlanosPage() {
   const session = await auth()
 
   let currentPlan = 'BASIC'
+  let motivoDoTeste: string | null = 'Entre na sua conta para ativar a oferta.'
+  const vagas = await vagasRestantes()
+
   if (session?.user?.id) {
     // Se um pagamento foi confirmado no Asaas e o aviso não chegou, o plano é ativado aqui
     await sincronizarPagamentos(session.user.id)
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { planId: true, planExpiresAt: true },
+      select: { planId: true, planExpiresAt: true, trialEndsAt: true },
     })
     if (user?.planId && user.planExpiresAt && user.planExpiresAt > new Date()) {
       currentPlan = user.planId
     }
+    motivoDoTeste = motivoParaNaoResgatar(user)
   }
 
   return (
@@ -48,6 +54,8 @@ export default async function PlanosPage() {
         </section>
 
         {/* Cards de planos */}
+        <TrialOffer vagas={vagas} motivo={motivoDoTeste} isLoggedIn={!!session} />
+
         <PlansClient plans={PLANOS} currentPlan={currentPlan} isLoggedIn={!!session} />
 
         {/* Garantias */}

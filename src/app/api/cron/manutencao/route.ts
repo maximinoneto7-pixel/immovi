@@ -2,7 +2,9 @@ import { prisma } from '@/lib/prisma'
 import { RETENCAO_DIAS } from '@/lib/registro'
 import { expirarPropostasVencidas, } from '@/lib/propostas'
 import { soData, nomeDoPeriodo, dataPorExtenso } from '@/lib/visitas'
-import { sendVisitReminderEmail } from '@/lib/email'
+import { sendVisitReminderEmail, sendPlanEndingEmail, sendPlanEndedEmail } from '@/lib/email'
+import { listingLimit } from '@/lib/subscription'
+import { PLANOS } from '@/lib/stripe'
 import { sendPushToUser } from '@/lib/push'
 
 // Manutenção diária (chamada pela Vercel). Só encerra o que já venceu: não recebe
@@ -100,10 +102,91 @@ export async function GET(request: Request) {
   const corteRegistro = new Date(agora.getTime() - RETENCAO_DIAS * 24 * 60 * 60 * 1000)
   const { count: registrosApagados } = await prisma.accessLog.deleteMany({ where: { createdAt: { lt: corteRegistro } } })
 
+
+  // ── Plano vencendo em 7 dias: avisa uma vez ───────────────────────────────
+  const daquiASeteDias = new Date(agora.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const aVencer = await prisma.user.findMany({
+    where: {
+      planId: { notIn: ['BASIC'] },
+      NOT: { planId: null },
+      planExpiresAt: { gt: agora, lte: daquiASeteDias },
+      planWarnedAt: null,
+      deletedAt: null,
+    },
+    select: { id: true, name: true, email: true, planId: true, planExpiresAt: true, trialEndsAt: true },
+  })
+
+  for (const pessoa of aVencer) {
+    const ativos = await prisma.property.count({ where: { ownerId: pessoa.id, status: 'ACTIVE' } })
+    await sendPlanEndingEmail(pessoa.email, pessoa.name, {
+      plano: PLANOS[pessoa.planId as keyof typeof PLANOS]?.nome || 'plano',
+      ate: pessoa.planExpiresAt!,
+      teste: !!pessoa.trialEndsAt && pessoa.trialEndsAt.getTime() === pessoa.planExpiresAt!.getTime(),
+      anunciosAtivos: ativos,
+      limiteDepois: PLANOS.BASIC.anuncios,
+    }).catch((err) => console.error('[Manutenção] aviso de plano:', err.message))
+    await prisma.user.update({ where: { id: pessoa.id }, data: { planWarnedAt: agora } })
+  }
+
+  // ── Plano vencido: conta volta ao Básico e os anúncios excedentes pausam ──
+  //
+  // O limite de anúncios só era checado ao publicar ou reativar. Sem isto, bastava
+  // assinar um mês (ou usar o teste), publicar vinte anúncios e deixar o plano
+  // vencer para ficar com os vinte no ar para sempre.
+  const vencidosDePlano = await prisma.user.findMany({
+    where: {
+      planId: { notIn: ['BASIC'] },
+      NOT: { planId: null },
+      planExpiresAt: { lt: agora },
+      deletedAt: null,
+    },
+    select: { id: true, name: true, email: true, planId: true, role: true },
+  })
+
+  let planosEncerrados = 0
+  let anunciosPausados = 0
+
+  for (const pessoa of vencidosDePlano) {
+    const limite = listingLimit({ planId: null, planExpiresAt: null, role: pessoa.role })
+
+    let pausados = 0
+    if (Number.isFinite(limite)) {
+      // Mantemos no ar os mais vistos: são os que têm mais chance de fechar negócio
+      const ativos = await prisma.property.findMany({
+        where: { ownerId: pessoa.id, status: 'ACTIVE' },
+        orderBy: [{ views: 'desc' }, { createdAt: 'desc' }],
+        select: { id: true },
+      })
+      const excedentes = ativos.slice(limite).map((a) => a.id)
+      if (excedentes.length > 0) {
+        const r = await prisma.property.updateMany({
+          where: { id: { in: excedentes } },
+          data: { status: 'PAUSED' },
+        })
+        pausados = r.count
+        anunciosPausados += r.count
+      }
+    }
+
+    await prisma.user.update({
+      where: { id: pessoa.id },
+      data: { planId: null, planExpiresAt: null, planWarnedAt: null },
+    })
+    planosEncerrados++
+
+    await sendPlanEndedEmail(pessoa.email, pessoa.name, {
+      plano: PLANOS[pessoa.planId as keyof typeof PLANOS]?.nome || 'plano',
+      pausados,
+      mantidos: Number.isFinite(limite) ? limite : 0,
+    }).catch((err) => console.error('[Manutenção] fim de plano:', err.message))
+  }
+
   const resultado = {
     destaquesEncerrados, destaquesSemFoguete: orfaos.length, propostasExpiradas,
     lembretesDeVisita: visitasDeAmanha.length, visitasConcluidas,
-    visitasApagadas, registrosApagados, em: agora.toISOString(),
+    visitasApagadas, registrosApagados,
+    planosAvisados: aVencer.length, planosEncerrados, anunciosPausados,
+    em: agora.toISOString(),
   }
   console.log('[Manutenção diária]', JSON.stringify(resultado))
   return Response.json(resultado)

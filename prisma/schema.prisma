@@ -33,6 +33,11 @@ model User {
   // Plano ativo
   planId        String?
   planExpiresAt DateTime?
+  // Oferta de abertura: 60 dias de Destaque para os 50 primeiros. Guarda o fim do
+  // teste (e serve para contar quem já resgatou, mesmo depois de vencido).
+  trialEndsAt   DateTime?
+  // Última vez que avisamos que o plano está perto de vencer, para não repetir
+  planWarnedAt  DateTime?
   stripeCustomerId String?
   asaasCustomerId  String?
   referralCode     String?  @unique

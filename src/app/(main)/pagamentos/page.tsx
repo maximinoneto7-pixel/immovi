@@ -6,12 +6,13 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import {
   CreditCard, TrendingUp, Users, Zap, CheckCircle2,
-  XCircle, Clock, ArrowUpRight, Rocket, Crown,
+  XCircle, Clock, ArrowUpRight, Rocket, Crown, Gift,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { formatPrice, PLANOS } from '@/lib/stripe'
 import CancelSubscriptionButton from '@/components/pagamentos/CancelSubscriptionButton'
 import { sincronizarPagamentos } from '@/lib/asaas-sync'
+import { emTeste } from '@/lib/trial'
 
 export default async function PagamentosPage() {
   const session = await auth()
@@ -26,7 +27,7 @@ export default async function PagamentosPage() {
   // Dados do usuário atual
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { planId: true, planExpiresAt: true, role: true },
+    select: { planId: true, planExpiresAt: true, role: true, trialEndsAt: true },
   })
 
   const mySubscriptions = await prisma.subscription.findMany({
@@ -65,6 +66,7 @@ export default async function PagamentosPage() {
     ? user.planId
     : 'BASIC'
 
+  const emTesteGratis = emTeste(user)
   const latestSubscription = mySubscriptions[0]
   const hasActiveRenewal = latestSubscription?.status === 'ACTIVE'
   const isCanceledButStillValid = latestSubscription?.status === 'CANCELED'
@@ -144,7 +146,19 @@ export default async function PagamentosPage() {
                   {planInfo?.preco ? <span className="text-sm font-normal text-gray-400">/mês</span> : ''}
                 </div>
                 {user?.planExpiresAt && currentPlan !== 'BASIC' && (
-                  isCanceledButStillValid ? (
+                  emTesteGratis ? (
+                    <div className="mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-left">
+                      <div className="flex items-center gap-1.5 text-indigo-900 text-sm font-semibold">
+                        <Gift className="w-4 h-4" />
+                        Teste grátis da oferta de abertura
+                      </div>
+                      <p className="text-xs text-indigo-800 mt-1">
+                        Você usa o {planInfo?.nome} até <strong>{formatDate(user.planExpiresAt)}</strong>, sem
+                        nenhuma cobrança. Avisamos uma semana antes de acabar — se não quiser continuar,
+                        não precisa fazer nada.
+                      </p>
+                    </div>
+                  ) : isCanceledButStillValid ? (
                     <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-left">
                       <div className="flex items-center gap-1.5 text-amber-900 text-sm font-semibold">
                         <Clock className="w-4 h-4" />

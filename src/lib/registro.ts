@@ -17,13 +17,27 @@ export type TipoRegistro =
   | 'DOCUMENTO_CONFERIDO'
   | 'DENUNCIA'
   | 'PROPOSTA'
+  | 'TESTE_GRATIS'
 
-/** Tira o IP e o navegador de uma requisição, sem quebrar quando não houver */
-export function origemDa(request?: { headers: { get(nome: string): string | null } } | Headers | null) {
-  const headers = request && 'headers' in request ? request.headers : (request as Headers | null)
+/**
+ * Tira o IP e o navegador de uma requisição.
+ *
+ * Aceita tanto um Request (rotas de API) quanto o próprio Headers devolvido por
+ * headers() (server actions). A diferença é descoberta por quem sabe responder
+ * get(): checar a existência da propriedade "headers" dava falso positivo no
+ * Headers do Next e quebrava a chamada com "headers?.get is not a function".
+ */
+export function origemDa(
+  entrada?: { headers: { get(nome: string): string | null } } | { get(nome: string): string | null } | null
+) {
+  const cabecalhos =
+    entrada && typeof (entrada as { get?: unknown }).get === 'function'
+      ? (entrada as { get(nome: string): string | null })
+      : (entrada as { headers?: { get(nome: string): string | null } } | null)?.headers
+
   return {
-    ip: headers?.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
-    userAgent: headers?.get('user-agent')?.slice(0, 200) || null,
+    ip: cabecalhos?.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+    userAgent: cabecalhos?.get('user-agent')?.slice(0, 200) || null,
   }
 }
 
