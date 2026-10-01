@@ -8,6 +8,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyGallery from '@/components/imoveis/PropertyGallery'
 import ContactForm from '@/components/imoveis/ContactForm'
+import { linkDoWhatsapp, recadoDoAnuncio } from '@/lib/whatsapp'
+import { SITE_URL } from '@/lib/site'
 import DocumentVerification from '@/components/imoveis/DocumentVerification'
 import ManageListingPanel from '@/components/imoveis/ManageListingPanel'
 import VisitAvailabilityPanel from '@/components/imoveis/VisitAvailabilityPanel'
@@ -81,8 +83,8 @@ export default async function PropertyDetailPage({
     include: {
       owner: {
         select: {
-          // Sem telefone: o contato acontece pelo chat da plataforma
-          id: true, name: true, image: true,
+          // O telefone só sai da página se a pessoa tiver ligado o botão de WhatsApp
+          id: true, name: true, image: true, phone: true, showWhatsapp: true,
           bio: true, verified: true, createdAt: true, lastSeenAt: true, showActivity: true,
           _count: { select: { properties: { where: { status: 'ACTIVE' } }, reviewsReceived: true } },
         },
@@ -109,6 +111,10 @@ export default async function PropertyDetailPage({
   if (!property) notFound()
 
   // Atividade aproximada do anunciante ("Ativo hoje"), nunca o horário exato; respeita a privacidade dele
+  const linkWhatsapp = property.owner.showWhatsapp
+    ? linkDoWhatsapp(property.owner.phone, recadoDoAnuncio(property.title, `${SITE_URL}/imoveis/${property.id}`))
+    : null
+
   const ownerActivity = property.owner.showActivity ? activityLabel(property.owner.lastSeenAt) : null
   const ownerOnline = !!ownerActivity && isOnline(property.owner.lastSeenAt)
 
@@ -626,6 +632,7 @@ export default async function PropertyDetailPage({
                   isLoggedIn={!!session}
                   diasDeVisita={diasDeVisita}
                   recadoDeVisita={property.visitAvailability?.note ?? null}
+                  linkWhatsapp={linkWhatsapp}
                 />
               ))}
 

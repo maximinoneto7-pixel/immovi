@@ -23,6 +23,7 @@ interface EditProfileFormProps {
     agencyName: string | null
     agencyPhone: string | null
     showActivity: boolean
+    showWhatsapp: boolean
     priceAlerts: boolean
   }
 }
@@ -117,6 +118,19 @@ export default function EditProfileForm({ user }: EditProfileFormProps) {
             <span className="block text-sm font-medium text-gray-800">Mostrar quando estou online e quando vi as mensagens</span>
             <span className="block text-xs text-gray-500 mt-0.5">
               Se desligar, os outros não veem seu “online agora”, “visto por último” nem “visualizada”, e você também deixa de ver o deles.
+            </span>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" name="showWhatsapp" value="true" defaultChecked={user.showWhatsapp}
+            className="w-4 h-4 mt-0.5 accent-indigo-600" />
+          <span>
+            <span className="block text-sm font-medium text-gray-800">Mostrar um botão de WhatsApp nos meus anúncios</span>
+            <span className="block text-xs text-gray-500 mt-0.5">
+              {user.phone
+                ? 'Quem abrir seu anúncio pode falar com você direto no WhatsApp, pelo telefone cadastrado acima. O número não aparece escrito na página — só o botão.'
+                : 'Cadastre um telefone acima para poder ligar esta opção.'}
             </span>
           </span>
         </label>

@@ -14,6 +14,8 @@ interface ContactFormProps {
   /** Dias liberados pelo anunciante; vazio mantém o pedido escrito de antes */
   diasDeVisita?: DiaDisponivel[]
   recadoDeVisita?: string | null
+  /** Link pronto do WhatsApp do anunciante; null quando ele não liberou o número */
+  linkWhatsapp?: string | null
 }
 
 export default function ContactForm({
@@ -23,6 +25,7 @@ export default function ContactForm({
   isLoggedIn,
   diasDeVisita,
   recadoDeVisita,
+  linkWhatsapp,
 }: ContactFormProps) {
   const [message, setMessage] = useState('')
   const messageRef = useRef<HTMLTextAreaElement>(null)
@@ -63,6 +66,20 @@ export default function ContactForm({
     }
   }
 
+  // O número nunca é escrito na página: sai daqui só o link já montado no servidor
+  const BotaoWhatsapp = () =>
+    linkWhatsapp ? (
+      <a
+        href={linkWhatsapp}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 w-full py-3 bg-[#25D366] text-white font-semibold rounded-xl hover:bg-[#1da851] transition-colors text-sm"
+      >
+        <MessageCircle className="w-4 h-4" />
+        Falar no WhatsApp
+      </a>
+    ) : null
+
   if (!isLoggedIn) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -70,12 +87,27 @@ export default function ContactForm({
           <MessageCircle className="w-4 h-4 text-indigo-500" />
           Entrar em contato
         </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Faça login para enviar mensagens diretamente ao anunciante.
-        </p>
+        {linkWhatsapp ? (
+          <>
+            <p className="text-sm text-gray-500 mb-4">
+              Fale agora pelo WhatsApp, ou entre na sua conta para conversar pelo chat da Immovi.
+            </p>
+            <div className="mb-2">
+              <BotaoWhatsapp />
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-gray-500 mb-4">
+            Faça login para enviar mensagens diretamente ao anunciante.
+          </p>
+        )}
         <Link
           href={`/login?redirect=/imoveis/${propertyId}`}
-          className="block w-full text-center py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors text-sm"
+          className={`block w-full text-center py-3 font-semibold rounded-xl transition-colors text-sm ${
+            linkWhatsapp
+              ? 'border border-gray-200 text-gray-700 hover:bg-gray-50'
+              : 'bg-indigo-600 text-white hover:bg-indigo-700'
+          }`}
         >
           Entrar para contatar
         </Link>
@@ -116,6 +148,15 @@ export default function ContactForm({
         <MessageCircle className="w-4 h-4 text-indigo-500" />
         Contatar {ownerName}
       </h3>
+
+      {linkWhatsapp && (
+        <div className="mb-4 pb-4 border-b border-gray-100">
+          <BotaoWhatsapp />
+          <p className="text-[11px] text-gray-400 mt-2 text-center">
+            Ou mande uma mensagem pelo chat da Immovi, que fica registrada aqui.
+          </p>
+        </div>
+      )}
 
       {/* Quick messages */}
       <div className="space-y-2 mb-3">

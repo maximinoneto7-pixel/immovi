@@ -46,6 +46,9 @@ model User {
   // Chat: "online agora" / "visto por último" (showActivity=false esconde e, em troca, não vê o dos outros)
   lastSeenAt    DateTime?
   showActivity  Boolean   @default(true)
+  // Mostrar o telefone como botão de WhatsApp nos próprios anúncios.
+  // Começa desligado: publicar o número de alguém é decisão da pessoa.
+  showWhatsapp  Boolean   @default(false)
   // Reservado: marcava a conta da própria Immovi. O selo saiu do site (a empresa
   // só poderia se apresentar como ofertante de imóvel de terceiro com CRECI-J).
   official      Boolean   @default(false)

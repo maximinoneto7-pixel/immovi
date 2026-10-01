@@ -22,6 +22,7 @@ export async function updateProfile(formData: FormData) {
   const agencyName = (formData.get('agencyName') as string || '').trim()
   const agencyPhone = (formData.get('agencyPhone') as string || '').trim()
   const showActivity = formData.get('showActivity') === 'true'
+  const showWhatsapp = formData.get('showWhatsapp') === 'true'
   const priceAlerts = formData.get('priceAlerts') === 'true'
 
   if (!name) return { error: 'Nome é obrigatório.' }
@@ -58,6 +59,7 @@ export async function updateProfile(formData: FormData) {
       agencyName: agencyName || null,
       agencyPhone: agencyPhone || null,
       showActivity,
+      showWhatsapp,
       priceAlerts,
     },
   })

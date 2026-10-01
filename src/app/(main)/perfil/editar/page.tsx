@@ -18,7 +18,7 @@ export default async function EditarPerfilPage() {
     select: {
       name: true, image: true, phone: true, bio: true, cpf: true,
       city: true, state: true, role: true, password: true,
-      creci: true, creciState: true, agencyName: true, agencyPhone: true, showActivity: true, priceAlerts: true,
+      creci: true, creciState: true, agencyName: true, agencyPhone: true, showActivity: true, showWhatsapp: true, priceAlerts: true,
     },
   })
 
