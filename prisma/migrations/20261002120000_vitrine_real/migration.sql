@@ -11,3 +11,6 @@ ALTER TABLE "User" ADD COLUMN     "creditoFoguetes" INTEGER NOT NULL DEFAULT 0;
 
 -- AlterTable
 ALTER TABLE "User" ADD COLUMN     "creditoRenovadoEm" TIMESTAMP(3);
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "planCortesia" BOOLEAN NOT NULL DEFAULT false;

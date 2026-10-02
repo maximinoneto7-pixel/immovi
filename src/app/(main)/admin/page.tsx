@@ -21,7 +21,7 @@ export default async function AdminPage() {
 
   const [
     totalUsers, newUsersThisWeek, totalProperties, activeProperties,
-    totalMessages, totalConversations, assinantesAtivos, emTesteAgora, revenueData, boostRevenueData,
+    totalMessages, totalConversations, assinantesAtivos, emTesteAgora, cortesiasAtivas, revenueData, boostRevenueData,
     recentUsers, recentProperties, pendingReports,
   ] = await Promise.all([
     prisma.user.count(),
@@ -38,11 +38,13 @@ export default async function AdminPage() {
         planId: { notIn: ['BASIC'] },
         NOT: { planId: null },
         planExpiresAt: { gt: new Date() },
-        // Quem está no teste de 60 dias não é assinante pagante
+        planCortesia: false,
+        // Quem está no teste de 60 dias também não é assinante pagante
         OR: [{ trialEndsAt: null }, { trialEndsAt: { lte: new Date() } }],
       },
     }),
     prisma.user.count({ where: { trialEndsAt: { gt: new Date() } } }),
+    prisma.user.count({ where: { planCortesia: true, planExpiresAt: { gt: new Date() } } }),
     // Só entra no caixa o que tem id de pagamento: a linha PENDING criada no checkout
     // já nasce com o valor esperado em amountPaid e contaria a mesma compra duas vezes.
     prisma.subscription.aggregate({ _sum: { amountPaid: true }, where: { stripeInvoiceId: { not: null } } }),
@@ -150,7 +152,7 @@ export default async function AdminPage() {
               { label: 'Total de Usuários', value: totalUsers, sub: `+${newUsersThisWeek} esta semana`, icon: Users, color: 'blue', href: '/admin/usuarios' },
               { label: 'Imóveis Ativos', value: activeProperties, sub: `${totalProperties} total`, icon: Home, color: 'green', href: '/admin/anuncios' },
               { label: 'Mensagens Trocadas', value: totalMessages.toLocaleString('pt-BR'), sub: `${totalConversations} conversas`, icon: MessageCircle, color: 'violet', href: '/admin/conversas' },
-              { label: 'Receita Total', value: formatCurrency(revenue), sub: `${assinantesAtivos === 1 ? '1 assinatura ativa' : `${assinantesAtivos} assinaturas ativas`}${emTesteAgora > 0 ? ` · ${emTesteAgora} em teste` : ''}`, icon: TrendingUp, color: 'amber', href: '/pagamentos' },
+              { label: 'Receita Total', value: formatCurrency(revenue), sub: `${assinantesAtivos === 1 ? '1 assinatura ativa' : `${assinantesAtivos} assinaturas ativas`}${emTesteAgora > 0 ? ` · ${emTesteAgora} em teste` : ''}${cortesiasAtivas > 0 ? ` · ${cortesiasAtivas} cortesia` : ''}`, icon: TrendingUp, color: 'amber', href: '/pagamentos' },
             ].map((kpi) => (
               <Link key={kpi.label} href={kpi.href}
                 className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow group">

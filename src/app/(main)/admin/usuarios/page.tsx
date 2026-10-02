@@ -6,6 +6,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Users, Shield, ArrowLeft, UserCheck, Home, MessageCircle, Search } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import PlanoCortesia from '@/components/admin/PlanoCortesia'
+import { PLANOS, type PlanoId } from '@/lib/stripe'
 
 export default async function AdminUsuariosPage({
   searchParams,
@@ -39,6 +41,7 @@ export default async function AdminUsuariosPage({
       include: {
         _count: { select: { properties: true, conversations: true } },
       },
+      omit: { password: true },
     }),
     prisma.user.count({ where }),
   ])
@@ -98,6 +101,7 @@ export default async function AdminUsuariosPage({
                   <th className="text-center px-4 py-3 font-semibold text-gray-600 hidden lg:table-cell">Conversas</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 hidden md:table-cell">Cadastro</th>
                   <th className="text-center px-4 py-3 font-semibold text-gray-600">Status</th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-600">Plano</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -146,6 +150,15 @@ export default async function AdminUsuariosPage({
                         }`}>
                           {u.verified ? '✓ Verificado' : 'Pendente'}
                         </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <PlanoCortesia
+                          userId={u.id}
+                          nome={u.name}
+                          planoAtual={u.planId ? (PLANOS[u.planId as PlanoId]?.nome ?? u.planId) : null}
+                          valeAte={u.planExpiresAt ? u.planExpiresAt.toISOString() : null}
+                          cortesia={u.planCortesia}
+                        />
                       </td>
                     </tr>
                   )

@@ -52,6 +52,9 @@ model User {
   // Foguetes que o plano dá por mês, e quando a cota foi renovada pela última vez
   creditoFoguetes  Int       @default(0)
   creditoRenovadoEm DateTime?
+  // Plano dado de cortesia pelo administrador, sem pagamento. Serve para não
+  // contar essas pessoas como assinantes pagantes no painel.
+  planCortesia  Boolean   @default(false)
   // Reservado: marcava a conta da própria Immovi. O selo saiu do site (a empresa
   // só poderia se apresentar como ofertante de imóvel de terceiro com CRECI-J).
   official      Boolean   @default(false)

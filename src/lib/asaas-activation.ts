@@ -57,7 +57,7 @@ export async function ativarPlanoPago(payment: PagamentoAsaas): Promise<boolean>
     })
   }
 
-  await prisma.user.update({ where: { id: userId }, data: { planId, planExpiresAt: expiresAt } })
+  await prisma.user.update({ where: { id: userId }, data: { planId, planExpiresAt: expiresAt, planCortesia: false } })
   await sincronizarRanking(userId)
   console.log(`[Asaas] Plano ativado: ${planId} para ${userId}`)
   return true

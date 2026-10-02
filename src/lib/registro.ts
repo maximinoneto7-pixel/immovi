@@ -18,6 +18,7 @@ export type TipoRegistro =
   | 'DENUNCIA'
   | 'PROPOSTA'
   | 'TESTE_GRATIS'
+  | 'PLANO_CORTESIA'
 
 /**
  * Tira o IP e o navegador de uma requisição.
