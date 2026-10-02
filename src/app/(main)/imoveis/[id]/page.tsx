@@ -8,6 +8,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PropertyGallery from '@/components/imoveis/PropertyGallery'
 import ContactForm from '@/components/imoveis/ContactForm'
+import BoostPanel from '@/components/imoveis/BoostPanel'
+import { saldoDeFoguetes, DIAS_DO_FOGUETE } from '@/lib/foguetes'
 import { linkDoWhatsapp, recadoDoAnuncio } from '@/lib/whatsapp'
 import { SITE_URL } from '@/lib/site'
 import DocumentVerification from '@/components/imoveis/DocumentVerification'
@@ -22,6 +24,7 @@ import {
   Bed, Bath, Car, Maximize2, MapPin, Shield, Star, Phone,
   MessageCircle, Heart, Calendar, Eye, CheckCircle2, Pause,
   Home, BookOpen, Leaf, Users, Video, ExternalLink, Clock, BadgeCheck,
+  BarChart3, ChevronRight,
 } from 'lucide-react'
 import { formatCurrency, formatArea, formatAlqueires, formatDate, isRural, mainArea, PROPERTY_TYPES, LISTING_TYPES } from '@/lib/utils'
 import { typeFields } from '@/lib/property-fields'
@@ -131,6 +134,21 @@ export default async function PropertyDetailPage({
 
   const isOwner = session?.user?.id === property.ownerId
   const canManage = isOwner || session?.user?.role === 'ADMIN'
+
+  // Foguete em vigor e cota do plano, só para quem gerencia o anúncio
+  const fogueteEmDia = canManage
+    ? await prisma.propertyBoost.findFirst({
+        where: { propertyId: property.id, status: 'ACTIVE', expiresAt: { gte: new Date() } },
+        orderBy: { expiresAt: 'desc' },
+        select: { boostType: true, expiresAt: true },
+      })
+    : null
+
+  const saldoBruto = canManage && isOwner ? await saldoDeFoguetes(property.ownerId) : null
+  const saldoFoguetes = saldoBruto
+    ? { cota: saldoBruto.cota, disponiveis: saldoBruto.disponiveis, renovaEm: saldoBruto.renovaEm?.toISOString() ?? null }
+    : undefined
+
   const isClosed = property.status === 'SOLD' || property.status === 'RENTED'
   const isPaused = property.status === 'INACTIVE' || property.status === 'PENDING'
 
@@ -555,6 +573,29 @@ export default async function PropertyDetailPage({
                     favorites: property._count.favorites,
                     conversations: property._count.conversations,
                   }}
+                />
+              )}
+
+              {canManage && (
+                <Link
+                  href={`/imoveis/${property.id}/desempenho`}
+                  className="flex items-center justify-between gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-3.5 hover:border-indigo-200 transition-colors"
+                >
+                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                    <BarChart3 className="w-4 h-4 text-indigo-500" />
+                    Relatório de desempenho
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-gray-300" />
+                </Link>
+              )}
+
+              {/* Foguete: comprar, ou usar o que vem no plano */}
+              {canManage && (
+                <BoostPanel
+                  propertyId={property.id}
+                  currentBoost={fogueteEmDia}
+                  saldo={saldoFoguetes}
+                  diasDoFoguete={DIAS_DO_FOGUETE}
                 />
               )}
 

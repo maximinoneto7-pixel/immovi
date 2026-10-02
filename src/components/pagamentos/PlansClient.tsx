@@ -14,6 +14,16 @@ interface PlansClientProps {
   isLoggedIn: boolean
 }
 
+// O que a tabela compara precisa existir de verdade: prioridade vem do rank do
+// plano na busca, e o relatório é a página de desempenho do anúncio.
+const PRIORIDADE: Record<string, string> = {
+  BASIC: '—',
+  DESTAQUE: 'Alta',
+  PROFISSIONAL: 'Maior',
+  IMOBILIARIA: 'Máxima',
+}
+const RELATORIO = ['PROFISSIONAL', 'IMOBILIARIA']
+
 const ICONS: Record<PlanoId, React.ElementType> = {
   BASIC: Star,
   DESTAQUE: Zap,
@@ -224,9 +234,9 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
             <tbody>
               {[
                 { label: 'Anúncios ativos', fn: (p: typeof plans[PlanoId]) => p.anuncios === 999 ? 'Ilimitado' : String(p.anuncios) },
-                { label: 'Destaques', fn: (p: typeof plans[PlanoId]) => String(p.destaques) },
-                { label: 'Foguetes/mês', fn: (p: typeof plans[PlanoId]) => String(p.foguetes) },
-                { label: 'Badge verificado', fn: (p: typeof plans[PlanoId]) => p.verificacao ? '✓' : '—' },
+                { label: 'Foguetes inclusos por mês', fn: (p: typeof plans[PlanoId]) => String(p.foguetes) },
+                { label: 'Prioridade na busca', fn: (p: typeof plans[PlanoId]) => PRIORIDADE[p.id] },
+                { label: 'Relatório de desempenho', fn: (p: typeof plans[PlanoId]) => RELATORIO.includes(p.id) ? '✓' : '—' },
                 { label: 'Contratos digitais', fn: (p: typeof plans[PlanoId]) => p.preco > 0 ? '✓' : '—' },
               ].map((row) => (
                 <tr key={row.label} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">

@@ -72,7 +72,8 @@ async function getProperties(params: SearchParams) {
       where,
       skip,
       take: pageSize,
-      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      // Foguete primeiro, depois o plano do anunciante, depois o mais novo
+      orderBy: [{ featured: 'desc' }, { planRank: 'desc' }, { createdAt: 'desc' }],
       include: {
         owner: { select: { id: true, name: true, image: true, verified: true } },
         images: { orderBy: { order: 'asc' } },

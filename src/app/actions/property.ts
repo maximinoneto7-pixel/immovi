@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { notifyMatchingAlerts } from '@/lib/alerts'
 import { listingLimitError } from '@/lib/subscription'
+import { sincronizarRanking } from '@/lib/ranking'
 import { notifyPriceDrop, shownPrice } from '@/lib/price-alerts'
 import { emailGateOpen, UNVERIFIED_PUBLISH_ERROR } from '@/lib/email-verification'
 import { after } from 'next/server'
@@ -129,6 +130,8 @@ async function createFromForm(formData: FormData) {
       detail: `${property.id} · ${property.title}`,
     })
   })
+
+  await sincronizarRanking(session.user.id)
 
   revalidatePath('/imoveis')
   revalidatePath('/')

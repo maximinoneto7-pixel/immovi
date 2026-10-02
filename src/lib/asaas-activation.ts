@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { sincronizarRanking } from '@/lib/ranking'
 import { addDays, addMonths } from 'date-fns'
 
 // Ativação do que foi pago no Asaas. Usada pelo webhook e pela conferência que o
@@ -57,6 +58,7 @@ export async function ativarPlanoPago(payment: PagamentoAsaas): Promise<boolean>
   }
 
   await prisma.user.update({ where: { id: userId }, data: { planId, planExpiresAt: expiresAt } })
+  await sincronizarRanking(userId)
   console.log(`[Asaas] Plano ativado: ${planId} para ${userId}`)
   return true
 }

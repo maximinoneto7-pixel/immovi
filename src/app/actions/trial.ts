@@ -7,6 +7,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { emailGateOpen, UNVERIFIED_MESSAGE_ERROR } from '@/lib/email-verification'
 import { registrar, origemDa } from '@/lib/registro'
+import { sincronizarRanking } from '@/lib/ranking'
 import { sendTrialStartedEmail } from '@/lib/email'
 import { TRIAL_DIAS, TRIAL_PLANO, TRIAL_VAGAS, motivoParaNaoResgatar } from '@/lib/trial'
 
@@ -60,6 +61,8 @@ export async function resgatarTeste() {
     if (motivo === 'JA_USOU') return { error: 'Você já usou os 60 dias de teste.' }
     throw err
   }
+
+  await sincronizarRanking(userId)
 
   const origem = origemDa(await headers())
   after(async () => {

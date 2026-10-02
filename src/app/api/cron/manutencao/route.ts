@@ -4,6 +4,7 @@ import { expirarPropostasVencidas, } from '@/lib/propostas'
 import { soData, nomeDoPeriodo, dataPorExtenso } from '@/lib/visitas'
 import { sendVisitReminderEmail, sendPlanEndingEmail, sendPlanEndedEmail } from '@/lib/email'
 import { listingLimit } from '@/lib/subscription'
+import { sincronizarRanking } from '@/lib/ranking'
 import { PLANOS } from '@/lib/stripe'
 import { sendPushToUser } from '@/lib/push'
 
@@ -172,6 +173,7 @@ export async function GET(request: Request) {
       where: { id: pessoa.id },
       data: { planId: null, planExpiresAt: null, planWarnedAt: null },
     })
+    await sincronizarRanking(pessoa.id)
     planosEncerrados++
 
     await sendPlanEndedEmail(pessoa.email, pessoa.name, {

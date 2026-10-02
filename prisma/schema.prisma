@@ -49,6 +49,9 @@ model User {
   // Mostrar o telefone como botão de WhatsApp nos próprios anúncios.
   // Começa desligado: publicar o número de alguém é decisão da pessoa.
   showWhatsapp  Boolean   @default(false)
+  // Foguetes que o plano dá por mês, e quando a cota foi renovada pela última vez
+  creditoFoguetes  Int       @default(0)
+  creditoRenovadoEm DateTime?
   // Reservado: marcava a conta da própria Immovi. O selo saiu do site (a empresa
   // só poderia se apresentar como ofertante de imóvel de terceiro com CRECI-J).
   official      Boolean   @default(false)
@@ -155,6 +158,9 @@ model Property {
   latitude      Float?
   longitude     Float?
   featured      Boolean  @default(false)
+  // Posição do anúncio na busca, vinda do plano do dono (0 Básico … 3 Imobiliária).
+  // Fica copiada aqui porque o Prisma não ordena por ranking de campo de relação.
+  planRank      Int      @default(0)
   verified      Boolean  @default(false)
   views         Int      @default(0)
   videoUrl      String?
@@ -184,6 +190,7 @@ model Property {
   @@index([status, state])
   @@index([status, type])
   @@index([status, createdAt])
+  @@index([status, featured, planRank, createdAt])
   @@index([ownerId])
 }
 
