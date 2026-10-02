@@ -1,3 +1,5 @@
+import { PLANOS, precoDoPlano, type CicloCobranca } from '@/lib/stripe'
+
 // ─── Cliente Asaas ───────────────────────────────────────────────────────────
 // Documentação: https://docs.asaas.com/reference
 
@@ -88,10 +90,34 @@ export function isAsaasConfigured(): boolean {
 
 // ─── Mapeamento de planos → preço Asaas ─────────────────────────────────────
 
-export const ASAAS_PLANOS: Record<string, { value: number; cycle: 'MONTHLY'; description: string }> = {
-  DESTAQUE:     { value: 99.00,  cycle: 'MONTHLY', description: 'Immovi — Plano Destaque' },
-  PROFISSIONAL: { value: 199.00, cycle: 'MONTHLY', description: 'Immovi — Plano Profissional' },
-  IMOBILIARIA:  { value: 499.00, cycle: 'MONTHLY', description: 'Immovi — Plano Imobiliária' },
+// Preço: fonte única em lib/stripe.ts. Antes o valor vivia escrito aqui também, e
+// bastava mudar um lado para a tela anunciar um preço e a cobrança sair outro.
+export interface CobrancaDePlano {
+  value: number
+  cycle: 'MONTHLY' | 'YEARLY'
+  description: string
+}
+
+function tabela(ciclo: CicloCobranca): Record<string, CobrancaDePlano> {
+  const entradas = Object.values(PLANOS)
+    .filter((p) => p.preco > 0)
+    .map((p) => [
+      p.id,
+      {
+        value: precoDoPlano(p.id, ciclo) / 100,
+        cycle: ciclo === 'ANUAL' ? ('YEARLY' as const) : ('MONTHLY' as const),
+        description: `Immovi — Plano ${p.nome}${ciclo === 'ANUAL' ? ' (anual)' : ''}`,
+      },
+    ])
+  return Object.fromEntries(entradas)
+}
+
+export const ASAAS_PLANOS = tabela('MENSAL')
+export const ASAAS_PLANOS_ANUAIS = tabela('ANUAL')
+
+/** A cobrança do plano no ciclo pedido */
+export function cobrancaDoPlano(planId: string, ciclo: CicloCobranca): CobrancaDePlano | undefined {
+  return (ciclo === 'ANUAL' ? ASAAS_PLANOS_ANUAIS : ASAAS_PLANOS)[planId]
 }
 
 export const ASAAS_FOGUETES: Record<string, { value: number; description: string }> = {

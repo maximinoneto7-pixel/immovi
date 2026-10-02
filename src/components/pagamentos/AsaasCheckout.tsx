@@ -19,6 +19,8 @@ interface AsaasCheckoutProps {
   price: number
   description: string
   initialBillingType?: BillingType
+  /** MENSAL cobra todo mês; ANUAL cobra o ano de uma vez */
+  ciclo?: 'MENSAL' | 'ANUAL'
   onClose?: () => void
 }
 
@@ -29,7 +31,7 @@ const BILLING_OPTIONS: { id: BillingType; label: string; icon: React.ElementType
 ]
 
 export default function AsaasCheckout({
-  type, planId, boostType, propertyId, price, description, initialBillingType, onClose,
+  type, planId, boostType, propertyId, price, description, initialBillingType, ciclo = 'MENSAL', onClose,
 }: AsaasCheckoutProps) {
   const router = useRouter()
   const [billingType, setBillingType] = useState<BillingType>(initialBillingType || 'PIX')
@@ -45,7 +47,7 @@ export default function AsaasCheckout({
       const res = await fetch('/api/asaas/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, planId, boostType, propertyId, billingType }),
+        body: JSON.stringify({ type, planId, boostType, propertyId, billingType, ciclo }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erro ao gerar pagamento.')

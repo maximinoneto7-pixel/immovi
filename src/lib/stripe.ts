@@ -9,6 +9,7 @@ export const PLANOS = {
     id: 'BASIC',
     nome: 'Básico',
     preco: 0,
+    precoAnual: 0,
     anuncios: 1,
     destaques: 0,
     foguetes: 0,
@@ -26,6 +27,8 @@ export const PLANOS = {
     id: 'DESTAQUE',
     nome: 'Destaque',
     preco: 9900, // centavos = R$ 99
+    // Dois meses de desconto: dez mensalidades pagam o ano
+    precoAnual: 99000,
     anuncios: 5,
     destaques: 1,
     foguetes: 1,
@@ -47,6 +50,8 @@ export const PLANOS = {
     id: 'PROFISSIONAL',
     nome: 'Profissional',
     preco: 19900, // R$ 199
+    // Dois meses de desconto: dez mensalidades pagam o ano
+    precoAnual: 199000,
     anuncios: 20,
     destaques: 5,
     foguetes: 3,
@@ -68,6 +73,8 @@ export const PLANOS = {
     id: 'IMOBILIARIA',
     nome: 'Imobiliária',
     preco: 49900, // R$ 499
+    // Dois meses de desconto: dez mensalidades pagam o ano
+    precoAnual: 499000,
     anuncios: 999,
     destaques: 20,
     foguetes: 10,
@@ -98,4 +105,20 @@ export const FOGUETES = {
 
 export function formatPrice(centavos: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(centavos / 100)
+}
+
+export type CicloCobranca = 'MENSAL' | 'ANUAL'
+
+/** Quanto custa o plano no ciclo escolhido, em centavos */
+export function precoDoPlano(planId: string, ciclo: CicloCobranca) {
+  const plano = PLANOS[planId as PlanoId]
+  if (!plano) return 0
+  return ciclo === 'ANUAL' ? plano.precoAnual : plano.preco
+}
+
+/** Quanto a pessoa deixa de pagar escolhendo o ano, em centavos */
+export function economiaDoAno(planId: string) {
+  const plano = PLANOS[planId as PlanoId]
+  if (!plano || plano.preco === 0) return 0
+  return plano.preco * 12 - plano.precoAnual
 }

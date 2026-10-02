@@ -19,11 +19,13 @@ async function planoJaAtivado(paymentId: string) {
 
 /** Plano pago: referência no formato "userId:planId" */
 export async function ativarPlanoPago(payment: PagamentoAsaas): Promise<boolean> {
-  const [userId, planId] = (payment.externalReference || '').split(':')
+  const [userId, planId, ciclo] = (payment.externalReference || '').split(':')
   if (!userId || !planId) return false
   if (await planoJaAtivado(payment.id)) return false
 
-  const expiresAt = addMonths(new Date(), 1)
+  // Assinaturas criadas antes do plano anual existir não trazem o ciclo: são mensais
+  const anual = ciclo === 'ANUAL'
+  const expiresAt = addMonths(new Date(), anual ? 12 : 1)
   const assinaturaAsaas = payment.subscription || payment.id
 
   // A cobrança nasce "pendente" no checkout; aqui ela vira ativa em vez de virar uma segunda linha
@@ -34,7 +36,10 @@ export async function ativarPlanoPago(payment: PagamentoAsaas): Promise<boolean>
   if (pendente) {
     await prisma.subscription.update({
       where: { id: pendente.id },
-      data: { status: 'ACTIVE', plan: planId, stripeInvoiceId: payment.id, amountPaid: payment.value, expiresAt },
+      data: {
+        status: 'ACTIVE', plan: planId, stripeInvoiceId: payment.id,
+        amountPaid: payment.value, billingCycle: anual ? 'YEARLY' : 'MONTHLY', expiresAt,
+      },
     })
   } else {
     await prisma.subscription.create({
@@ -44,6 +49,7 @@ export async function ativarPlanoPago(payment: PagamentoAsaas): Promise<boolean>
         stripeSubscriptionId: assinaturaAsaas,
         stripeInvoiceId: payment.id,
         amountPaid: payment.value,
+        billingCycle: anual ? 'YEARLY' : 'MONTHLY',
         expiresAt,
         userId,
       },

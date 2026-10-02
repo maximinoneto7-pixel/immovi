@@ -1,9 +1,10 @@
 import { auth } from '@/lib/auth'
 import { avisarErro } from '@/lib/alerta-erro'
 import { prisma } from '@/lib/prisma'
+import type { CicloCobranca } from '@/lib/stripe'
 import {
   getAsaasClient, isAsaasConfigured,
-  ASAAS_PLANOS, ASAAS_FOGUETES,
+  ASAAS_FOGUETES, cobrancaDoPlano,
   nextDueDate, asaasDate,
   type AsaasBillingType,
 } from '@/lib/asaas'
@@ -38,12 +39,13 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { type, planId, boostType, propertyId, billingType = 'PIX' } = body as {
+  const { type, planId, boostType, propertyId, billingType = 'PIX', ciclo = 'MENSAL' } = body as {
     type: 'plan' | 'boost'
     planId?: string
     boostType?: string
     propertyId?: string
     billingType?: AsaasBillingType
+    ciclo?: CicloCobranca
   }
 
   const user = await prisma.user.findUnique({
@@ -99,7 +101,7 @@ export async function POST(request: Request) {
 
     // ─── 2. Plano (assinatura recorrente) ────────────────────────────────────
     if (type === 'plan' && planId) {
-      const plano = ASAAS_PLANOS[planId]
+      const plano = cobrancaDoPlano(planId, ciclo)
       if (!plano) return Response.json({ error: 'Plano inválido.' }, { status: 400 })
 
       const subscription = await comRetornoOpcional((comRetorno) => asaas.subscriptions.create({
@@ -109,7 +111,7 @@ export async function POST(request: Request) {
         nextDueDate: nextDueDate(),
         cycle: plano.cycle,
         description: plano.description,
-        externalReference: `${user.id}:${planId}`,
+        externalReference: `${user.id}:${planId}:${ciclo}`,
         ...(isLocalHost || !comRetorno ? {} : {
           callback: {
             successUrl: `${baseUrl}/pagamentos?success=1&provider=asaas`,
@@ -123,12 +125,13 @@ export async function POST(request: Request) {
       const firstPayment = payments.data?.[0]
 
       // Salva a assinatura pendente no banco
-      const expiresAt = addMonths(new Date(), 1)
+      const expiresAt = addMonths(new Date(), ciclo === 'ANUAL' ? 12 : 1)
       await prisma.subscription.create({
         data: {
           plan: planId,
           status: 'PENDING',
           amountPaid: plano.value,
+          billingCycle: ciclo === 'ANUAL' ? 'YEARLY' : 'MONTHLY',
           expiresAt,
           userId: user.id,
           stripeSubscriptionId: subscription.id, // reutilizando campo para o ID Asaas

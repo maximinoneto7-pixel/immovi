@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, Zap, Star, Crown, CreditCard } from 'lucide-react'
-import { formatPrice, PLANOS, type PlanoId } from '@/lib/stripe'
+import { formatPrice, PLANOS, economiaDoAno, type PlanoId, type CicloCobranca } from '@/lib/stripe'
 import { cn } from '@/lib/utils'
 import AsaasCheckout from '@/components/pagamentos/AsaasCheckout'
 import { cancelSubscription } from '@/app/actions/subscription'
@@ -30,14 +30,16 @@ const COLORS: Record<PlanoId, { ring: string; btn: string; badge: string }> = {
 
 export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansClientProps) {
   const router = useRouter()
-  const [checkout, setCheckout] = useState<{ planId: PlanoId; billingType: 'CREDIT_CARD' | 'PIX' } | null>(null)
+  const [ciclo, setCiclo] = useState<CicloCobranca>('MENSAL')
+  const [checkout, setCheckout] = useState<{ planId: PlanoId; billingType: 'CREDIT_CARD' | 'PIX'; ciclo: CicloCobranca } | null>(null)
+  const anual = ciclo === 'ANUAL'
 
   const [downgrading, setDowngrading] = useState(false)
 
   const openCheckout = (planId: PlanoId, billingType: 'CREDIT_CARD' | 'PIX') => {
     if (!isLoggedIn) { router.push('/login?redirect=/planos'); return }
     if (planId === currentPlan) return
-    setCheckout({ planId, billingType })
+    setCheckout({ planId, billingType, ciclo })
   }
 
   const handleDowngradeToBasic = async () => {
@@ -57,6 +59,28 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="flex justify-center mb-8">
+        <div className="inline-flex items-center gap-1 p-1 bg-gray-100 rounded-2xl">
+          <button
+            onClick={() => setCiclo('MENSAL')}
+            className={cn('px-5 py-2 rounded-xl text-sm font-semibold transition-colors',
+              !anual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}
+          >
+            Mensal
+          </button>
+          <button
+            onClick={() => setCiclo('ANUAL')}
+            className={cn('flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-colors',
+              anual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}
+          >
+            Anual
+            <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[11px] font-bold">
+              2 meses grátis
+            </span>
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {(Object.entries(plans) as [PlanoId, typeof plans[PlanoId]][]).map(([id, plan]) => {
           const c = COLORS[id]
@@ -92,12 +116,22 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
                   ) : (
                     <>
                       <span className="text-3xl font-bold text-gray-900">
-                        {formatPrice(plan.preco)}
+                        {formatPrice(anual ? plan.precoAnual : plan.preco)}
                       </span>
-                      <span className="text-gray-400 text-sm">/mês</span>
+                      <span className="text-gray-400 text-sm">{anual ? '/ano' : '/mês'}</span>
                     </>
                   )}
                 </div>
+                {plan.preco > 0 && anual && (
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="text-xs text-gray-500">
+                      sai por {formatPrice(Math.round(plan.precoAnual / 12))}/mês
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-[11px] font-bold">
+                      economiza {formatPrice(economiaDoAno(id))}
+                    </span>
+                  </div>
+                )}
                 <p className="text-xs text-gray-500 mb-5">{plan.descricao}</p>
 
                 {/* Recursos */}
@@ -130,23 +164,43 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
                     {downgrading ? 'Aguarde...' : 'Voltar para o Básico'}
                   </button>
                 ) : (
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => openCheckout(id, 'CREDIT_CARD')}
-                      className={cn(
-                        'w-full py-3 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2',
-                        c.btn
-                      )}
-                    >
-                      <CreditCard className="w-4 h-4" /> Assinar {plan.nome}
-                    </button>
-                    <button
-                      onClick={() => openCheckout(id, 'PIX')}
-                      className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      ou pagar com PIX/Boleto (renovação manual todo mês)
-                    </button>
-                  </div>
+                  anual ? (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => openCheckout(id, 'PIX')}
+                        className={cn(
+                          'w-full py-3 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2',
+                          c.btn
+                        )}
+                      >
+                        <Zap className="w-4 h-4" /> Pagar 1 ano no PIX
+                      </button>
+                      <button
+                        onClick={() => openCheckout(id, 'CREDIT_CARD')}
+                        className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        ou pagar no cartão
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => openCheckout(id, 'CREDIT_CARD')}
+                        className={cn(
+                          'w-full py-3 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2',
+                          c.btn
+                        )}
+                      >
+                        <CreditCard className="w-4 h-4" /> Assinar {plan.nome}
+                      </button>
+                      <button
+                        onClick={() => openCheckout(id, 'PIX')}
+                        className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        ou pagar com PIX/Boleto (renovação manual todo mês)
+                      </button>
+                    </div>
+                  )
                 )}
               </div>
             </div>
@@ -193,9 +247,10 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
         <AsaasCheckout
           type="plan"
           planId={checkout.planId}
-          price={plans[checkout.planId].preco / 100}
-          description={`Plano ${plans[checkout.planId].nome}`}
+          price={(checkout.ciclo === 'ANUAL' ? plans[checkout.planId].precoAnual : plans[checkout.planId].preco) / 100}
+          description={`Plano ${plans[checkout.planId].nome}${checkout.ciclo === 'ANUAL' ? ' — 1 ano' : ''}`}
           initialBillingType={checkout.billingType}
+          ciclo={checkout.ciclo}
           onClose={() => setCheckout(null)}
         />
       )}
