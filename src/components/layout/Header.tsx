@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils'
 import NavLinks from './NavLinks'
 import Logo from '@/components/common/Logo'
 import ResendVerification from '@/components/auth/ResendVerification'
+import AceiteDosTermos from '@/components/layout/AceiteDosTermos'
+import { TERMOS_DATA } from '@/lib/termos'
 
 interface HeaderProps {
   user?: {
@@ -29,6 +31,7 @@ export default function Header({ user }: HeaderProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [unread, setUnread] = useState(0)
   const [emailConfirmed, setEmailConfirmed] = useState(true)
+  const [termosPendentes, setTermosPendentes] = useState(false)
 
   // Sinal de "online" + conversas com mensagem nova: a cada troca de página,
   // a cada minuto com a aba visível e quando a aba volta a ficar visível
@@ -44,6 +47,7 @@ export default function Header({ user }: HeaderProps) {
           if (!alive || !d) return
           setUnread(d.unread)
           setEmailConfirmed(d.emailConfirmed !== false)
+          setTermosPendentes(d.termosPendentes === true)
         })
         .catch(() => {})
     }
@@ -69,6 +73,9 @@ export default function Header({ user }: HeaderProps) {
           </div>
         </div>
       )}
+      {/* Termos mudaram: o aceite fica a um clique, sem travar a navegação */}
+      {user && termosPendentes && <AceiteDosTermos data={TERMOS_DATA} />}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

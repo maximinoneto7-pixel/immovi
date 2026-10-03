@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { redirect } from 'next/navigation'
 import { sendVerificationLink } from '@/lib/email-verification'
+import { headers } from 'next/headers'
+import { origemDa } from '@/lib/registro'
+import { TERMOS_VERSAO } from '@/lib/termos'
 
 export async function registerUser(formData: FormData) {
   const name = formData.get('name') as string
@@ -56,6 +59,8 @@ export async function registerUser(formData: FormData) {
 
   const hashedPassword = await bcrypt.hash(password, 12)
 
+  const origemDoCadastro = origemDa(await headers())
+
   const user = await prisma.user.create({
     data: {
       name,
@@ -67,6 +72,10 @@ export async function registerUser(formData: FormData) {
       creci: creci || null,
       creciState: creciState || null,
       agencyName: agencyName || null,
+      // Aceite dos Termos: a caixa é obrigatória no formulário de cadastro
+      termsVersion: TERMOS_VERSAO,
+      termsAcceptedAt: new Date(),
+      termsAcceptedIp: origemDoCadastro.ip,
     },
   })
 

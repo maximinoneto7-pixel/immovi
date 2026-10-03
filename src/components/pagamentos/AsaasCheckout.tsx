@@ -119,6 +119,15 @@ export default function AsaasCheckout({
                 </div>
               )}
 
+              {/* A cláusula 7.3 só se sustenta se a pessoa souber disso ANTES de pagar */}
+              {type === 'boost' && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 mb-4">
+                  O destaque começa assim que o pagamento é confirmado e o prazo passa a correr na hora. Por
+                  começar imediatamente, <strong>não há reembolso depois da ativação</strong> — só em caso de
+                  falha da plataforma. Ao continuar, você concorda com isso.
+                </div>
+              )}
+
               <button
                 onClick={handlePayment}
                 disabled={loading}

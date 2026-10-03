@@ -3,13 +3,14 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { auth } from '@/lib/auth'
 import { FileText, ChevronRight } from 'lucide-react'
+import { TERMOS_DATA } from '@/lib/termos'
 
 export const metadata = {
   title: 'Termos de uso | Immovi',
   description: 'As regras de uso da plataforma Immovi.',
 }
 
-const ULTIMA_ATUALIZACAO = '3 de outubro de 2026'
+const ULTIMA_ATUALIZACAO = TERMOS_DATA
 
 const sections = [
   { id: 'definicoes', title: '1. Definições' },
@@ -262,9 +263,10 @@ export default async function TermosPage() {
                   livre a qualquer momento, encerrando-se ao fim do período já pago</li>
                 <li><strong>Contratos digitais:</strong> estão incluídos na assinatura, podem ser gerados sem limite de
                   quantidade e não têm custo adicional. Não há, portanto, valor a reembolsar por contrato gerado</li>
-                <li><strong>Foguete (destaque pago avulso):</strong> começa a valer na ativação e corre por dias corridos.
-                  Dentro dos 7 (sete) dias do art. 49, o valor é devolvido na proporção dos dias que ainda não foram
-                  usados; em caso de falha comprovada da Plataforma, a devolução é integral</li>
+                <li><strong>Foguete (destaque pago avulso):</strong> é serviço de fruição imediata. A exibição em
+                  destaque começa assim que o pagamento é confirmado, mediante concordância expressa do usuário no
+                  momento da compra, e o prazo corre em dias corridos a partir dali. Por já estar sendo prestado desde
+                  a ativação, <strong>não há reembolso</strong>, salvo em caso de falha comprovada da Plataforma</li>
               </ul>
             </section>
 
