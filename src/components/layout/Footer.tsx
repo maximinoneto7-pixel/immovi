@@ -42,9 +42,11 @@ export default function Footer() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 mt-5">
-              <Shield className="w-3.5 h-3.5 text-green-400" />
-              <span className="text-xs text-green-400 font-medium">Plataforma Verificada e Segura</span>
+            <div className="flex items-start gap-1.5 mt-5">
+              <Shield className="w-3.5 h-3.5 text-gray-500 flex-shrink-0 mt-0.5" />
+              <span className="text-xs text-gray-500">
+                Pagamentos processados pelo Asaas. A Immovi não armazena dados de cartão.
+              </span>
             </div>
           </div>
 

@@ -9,7 +9,7 @@ export const metadata = {
   description: 'As regras de uso da plataforma Immovi.',
 }
 
-const ULTIMA_ATUALIZACAO = '25 de junho de 2026'
+const ULTIMA_ATUALIZACAO = '3 de outubro de 2026'
 
 const sections = [
   { id: 'definicoes', title: '1. Definições' },
@@ -211,9 +211,18 @@ export default async function TermosPage() {
               <p>Para proteção de todos os usuários, a Plataforma:</p>
               <ul>
                 <li>Permite que os usuários troquem dados de contato (telefone, WhatsApp) livremente, a critério de cada um, dentro ou fora do chat</li>
+                <li><strong>Deixa a exibição do telefone nas mãos do anunciante:</strong> o botão de WhatsApp no anúncio
+                  só aparece se ele ligar a opção no próprio perfil. Enquanto estiver desligada — que é como a conta
+                  nasce —, nenhum número é publicado</li>
                 <li>Monitora conversas para identificar comportamentos fraudulentos ou abusivos, em especial pedidos de pagamento antes da visita ao imóvel</li>
                 <li>Mantém histórico das conversas por 2 anos para fins de segurança</li>
               </ul>
+              <p>
+                A decisão de negociar, com quem negociar e em que condições é <strong>exclusivamente dos usuários</strong>.
+                A Operadora não avalia imóvel, não aproxima partes por iniciativa própria, não opina sobre preço e não
+                recebe comissão sobre negócio fechado: sua receita vem apenas dos planos e dos destaques contratados por
+                quem anuncia.
+              </p>
               <p>
                 A Immovi <strong>não intermedeia pagamentos</strong> entre usuários e <strong>jamais solicita</strong>
                 depósito, sinal, caução ou taxa de reserva em nome de anunciantes. Nenhum valor deve ser pago antes
@@ -243,10 +252,19 @@ export default async function TermosPage() {
               </p>
               <h3>7.3. Cancelamento e reembolso</h3>
               <ul>
-                <li><strong>Planos de assinatura:</strong> podem ser cancelados a qualquer momento, sem multa, encerrando-se ao final do período já pago</li>
-                <li><strong>Direito de arrependimento (CDC, art. 49):</strong> compras realizadas fora do estabelecimento físico (online) podem ser canceladas em até 7 (sete) dias corridos da contratação, com reembolso integral</li>
-                <li><strong>Foguete (destaque pago):</strong> não reembolsável após ativação, salvo em caso de falha comprovada da Plataforma</li>
-                <li><strong>Contratos digitais:</strong> a geração do documento é imediata; não há reembolso após a emissão</li>
+                <li><strong>Planos de assinatura:</strong> podem ser cancelados a qualquer momento, sem multa. A cobrança
+                  seguinte é interrompida e o acesso continua até o fim do período já pago</li>
+                <li><strong>Direito de arrependimento (CDC, art. 49):</strong> a assinatura contratada pela internet pode
+                  ser cancelada em até 7 (sete) dias corridos da contratação, com reembolso integral</li>
+                <li><strong>Quem já usou período de teste gratuito:</strong> o arrependimento do art. 49 destina-se a quem
+                  contrata sem conhecer o serviço. Quem já experimentou a Plataforma em período gratuito de teste conheceu
+                  o serviço antes de pagar, e nesse caso o reembolso dos 7 dias não se aplica — o cancelamento continua
+                  livre a qualquer momento, encerrando-se ao fim do período já pago</li>
+                <li><strong>Contratos digitais:</strong> estão incluídos na assinatura, podem ser gerados sem limite de
+                  quantidade e não têm custo adicional. Não há, portanto, valor a reembolsar por contrato gerado</li>
+                <li><strong>Foguete (destaque pago avulso):</strong> começa a valer na ativação e corre por dias corridos.
+                  Dentro dos 7 (sete) dias do art. 49, o valor é devolvido na proporção dos dias que ainda não foram
+                  usados; em caso de falha comprovada da Plataforma, a devolução é integral</li>
               </ul>
             </section>
 
@@ -329,11 +347,17 @@ export default async function TermosPage() {
                 <li>Decisões tomadas com base nos resultados da verificação por IA</li>
                 <li>Atos de força maior, caso fortuito ou eventos fora do controle razoável da Operadora</li>
               </ul>
-              <h3>11.2. Limitação de valor</h3>
+              <h3>11.2. Danos causados por terceiros</h3>
               <p>
-                Em hipótese alguma a responsabilidade total da Immovi perante um usuário excederá
-                o montante efetivamente pago pelo usuário à Operadora nos 12 (doze) meses anteriores ao evento
-                que deu origem ao dano.
+                A Immovi <strong>não responde por prejuízos causados por terceiros na Plataforma</strong> — entre eles
+                anunciantes, interessados, corretores e quem se passe por qualquer deles. Isso abrange anúncio com
+                informação falsa, documento adulterado, cobrança indevida feita por outro usuário, promessa não cumprida
+                e golpe praticado dentro ou fora da Plataforma a partir de um contato aqui iniciado.
+              </p>
+              <p>
+                A Operadora apura as denúncias que recebe, remove o conteúdo irregular, suspende contas e colabora com
+                as autoridades (cláusula 11.3). O que ela não faz é figurar como parte, garantidora ou fiadora de
+                negócio entre usuários.
               </p>
               <h3>11.3. Denúncias e remoção de conteúdo</h3>
               <p>
@@ -365,8 +389,14 @@ export default async function TermosPage() {
                 2 (dois) anos, após notificação por e-mail com 30 (trinta) dias de antecedência.
               </p>
               <p>
-                Em casos de violações graves, a suspensão pode ser imediata, sem notificação prévia, incluindo
-                cancelamento de planos sem reembolso proporcional.
+                Em casos de violações graves — fraude, documento adulterado, anúncio de imóvel que não existe, uso da
+                conta para atividade ilícita ou tentativa de burlar os sistemas de segurança — a suspensão pode ser
+                imediata, sem notificação prévia.
+              </p>
+              <p>
+                Havendo suspensão, o valor do período contratado e <strong>ainda não usufruído é devolvido na devida
+                proporção</strong>. A devolução não se aplica a período gratuito de teste ou a plano liberado como
+                cortesia, por não ter havido pagamento.
               </p>
               <h3>12.2. Pelo usuário</h3>
               <p>
@@ -393,13 +423,7 @@ export default async function TermosPage() {
                 </a>{' '}
                 (plataforma oficial do Governo Federal) ou ao Juizado Especial Cível competente.
               </p>
-              <h3>13.3. Arbitragem</h3>
-              <p>
-                Para disputas de valor superior a R$ 60.000,00 (sessenta mil reais), as partes concordam em
-                tentar, previamente ao ajuizamento de ação judicial, resolver a controvérsia por meio de
-                mediação ou arbitragem, nos termos da Lei nº 9.307/1996, perante câmara arbitral de escolha
-                mútua, com sede na comarca de Ivolândia-GO ou em câmara eletrônica reconhecida pelas partes.
-              </p>
+
             </section>
 
             <section id="lei-aplicavel">
@@ -412,9 +436,9 @@ export default async function TermosPage() {
               </p>
               <p>
                 Para dirimir quaisquer controvérsias decorrentes destes Termos, as partes elegem o Foro da
-                Comarca de <strong>Ivolândia, Estado de Goiás</strong>, renunciando a qualquer outro, por
-                mais privilegiado que seja, salvo nas hipóteses em que a lei determine foro diverso (ex.:
-                domicílio do consumidor, nos termos do art. 101, I, do CDC).
+                Comarca de <strong>São Luís de Montes Belos, Estado de Goiás</strong>, renunciando a qualquer
+                outro, por mais privilegiado que seja, salvo nas hipóteses em que a lei determine foro diverso
+                (ex.: domicílio do consumidor, nos termos do art. 101, I, do CDC).
               </p>
             </section>
 
