@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { CheckCircle2, Zap, Star, Crown, CreditCard, Gift } from 'lucide-react'
 import { formatPrice, PLANOS, economiaDoAno, type PlanoId, type CicloCobranca } from '@/lib/stripe'
 import { cn } from '@/lib/utils'
@@ -120,7 +121,8 @@ export default function PlansClient({
         {(Object.entries(plans) as [PlanoId, typeof plans[PlanoId]][]).map(([id, plan]) => {
           const c = COLORS[id]
           const Icon = ICONS[id]
-          const isCurrent = currentPlan === id
+          // Visitante não tem plano: dizer que o Básico é o "plano atual" dele confunde
+          const isCurrent = isLoggedIn && currentPlan === id
           const isPopular = id === 'DESTAQUE'
 
           return (
@@ -196,6 +198,13 @@ export default function PlansClient({
                   <div className="w-full py-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-semibold text-center">
                     ✓ Plano atual
                   </div>
+                ) : plan.preco === 0 && !isLoggedIn ? (
+                  <Link
+                    href="/cadastro"
+                    className="w-full py-3 bg-gray-800 text-white rounded-xl text-sm font-semibold text-center block hover:bg-gray-900 transition-colors"
+                  >
+                    Criar conta grátis
+                  </Link>
                 ) : plan.preco === 0 ? (
                   <button
                     onClick={handleDowngradeToBasic}
