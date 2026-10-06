@@ -1,17 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, Zap, Star, Crown, CreditCard } from 'lucide-react'
+import { CheckCircle2, Zap, Star, Crown, CreditCard, Gift } from 'lucide-react'
 import { formatPrice, PLANOS, economiaDoAno, type PlanoId, type CicloCobranca } from '@/lib/stripe'
 import { cn } from '@/lib/utils'
 import AsaasCheckout from '@/components/pagamentos/AsaasCheckout'
 import { cancelSubscription } from '@/app/actions/subscription'
+import { resgatarTeste } from '@/app/actions/trial'
 
 interface PlansClientProps {
   plans: typeof PLANOS
   currentPlan: string
   isLoggedIn: boolean
+  /** Vagas restantes da oferta de abertura; 0 esconde a chamada */
+  vagasDoTeste?: number
+  /** Por que esta pessoa não pode pegar os 60 dias; null se pode */
+  motivoDoTeste?: string | null
 }
 
 // O que a tabela compara precisa existir de verdade: prioridade vem do rank do
@@ -38,13 +43,33 @@ const COLORS: Record<PlanoId, { ring: string; btn: string; badge: string }> = {
   IMOBILIARIA:  { ring: 'border-amber-400 ring-2 ring-amber-400', btn: 'bg-amber-500 hover:bg-amber-600', badge: 'bg-amber-100 text-amber-700' },
 }
 
-export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansClientProps) {
+export default function PlansClient({
+  plans, currentPlan, isLoggedIn, vagasDoTeste = 0, motivoDoTeste = null,
+}: PlansClientProps) {
   const router = useRouter()
   const [ciclo, setCiclo] = useState<CicloCobranca>('MENSAL')
   const [checkout, setCheckout] = useState<{ planId: PlanoId; billingType: 'CREDIT_CARD' | 'PIX'; ciclo: CicloCobranca } | null>(null)
   const anual = ciclo === 'ANUAL'
 
   const [downgrading, setDowngrading] = useState(false)
+  const [erroTeste, setErroTeste] = useState('')
+  const [pegouTeste, setPegouTeste] = useState(false)
+  const [pedindoTeste, startTeste] = useTransition()
+
+  // O teste de 60 dias é do plano Destaque: a chamada mora no próprio cartão dele,
+  // que é onde a pergunta "por que eu pagaria?" aparece.
+  const testeDisponivel = vagasDoTeste > 0 && !pegouTeste
+
+  const pegarTeste = () => {
+    if (!isLoggedIn) { router.push('/login?redirect=/planos'); return }
+    setErroTeste('')
+    startTeste(async () => {
+      const r = await resgatarTeste()
+      if (!r || 'error' in r) { setErroTeste(r?.error || 'Não consegui ativar.'); return }
+      setPegouTeste(true)
+      router.refresh()
+    })
+  }
 
   const openCheckout = (planId: PlanoId, billingType: 'CREDIT_CARD' | 'PIX') => {
     if (!isLoggedIn) { router.push('/login?redirect=/planos'); return }
@@ -147,6 +172,11 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
                     Condição de lançamento — enquanto a plataforma está começando
                   </p>
                 )}
+                {id === 'DESTAQUE' && testeDisponivel && (
+                  <p className="text-xs text-green-800 bg-green-50 rounded-lg px-2.5 py-1.5 mb-2 inline-block font-semibold">
+                    60 dias grátis para os 50 primeiros · {vagasDoTeste} {vagasDoTeste === 1 ? 'vaga' : 'vagas'}
+                  </p>
+                )}
                 <p className="text-xs text-gray-500 mb-5">{plan.descricao}</p>
 
                 {/* Recursos */}
@@ -179,7 +209,31 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
                     {downgrading ? 'Aguarde...' : 'Voltar para o Básico'}
                   </button>
                 ) : (
-                  anual ? (
+                  id === 'DESTAQUE' && testeDisponivel && !anual ? (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => (motivoDoTeste && isLoggedIn ? undefined : pegarTeste())}
+                        disabled={pedindoTeste || (!!motivoDoTeste && isLoggedIn)}
+                        className={cn(
+                          'w-full py-3 text-white rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2',
+                          c.btn, 'disabled:opacity-50',
+                        )}
+                      >
+                        <Gift className="w-4 h-4" />
+                        {motivoDoTeste && isLoggedIn ? motivoDoTeste : 'Começar 60 dias grátis'}
+                      </button>
+                      <button
+                        onClick={() => openCheckout(id, 'CREDIT_CARD')}
+                        className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        ou assinar agora por {formatPrice(plan.preco)}/mês
+                      </button>
+                      {erroTeste && <p className="text-xs text-red-600 text-center">{erroTeste}</p>}
+                      <p className="text-[11px] text-gray-400 text-center leading-relaxed">
+                        Sem cartão. No fim dos 60 dias a conta volta ao Básico sozinha, sem cobrança.
+                      </p>
+                    </div>
+                  ) : anual ? (
                     <div className="space-y-2">
                       <button
                         onClick={() => openCheckout(id, 'PIX')}

@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PlansClient from '@/components/pagamentos/PlansClient'
-import TrialOffer from '@/components/pagamentos/TrialOffer'
 import { vagasRestantes, motivoParaNaoResgatar } from '@/lib/trial'
 import { PLANOS } from '@/lib/stripe'
 import { CheckCircle2, Zap, Shield, Building2 } from 'lucide-react'
@@ -54,9 +53,13 @@ export default async function PlanosPage() {
         </section>
 
         {/* Cards de planos */}
-        <TrialOffer vagas={vagas} motivo={motivoDoTeste} isLoggedIn={!!session} />
-
-        <PlansClient plans={PLANOS} currentPlan={currentPlan} isLoggedIn={!!session} />
+        <PlansClient
+          plans={PLANOS}
+          currentPlan={currentPlan}
+          isLoggedIn={!!session}
+          vagasDoTeste={vagas}
+          motivoDoTeste={motivoDoTeste}
+        />
 
         {/* Garantias */}
         <section className="max-w-4xl mx-auto px-4 py-12">
