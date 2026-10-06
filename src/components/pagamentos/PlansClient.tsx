@@ -171,12 +171,12 @@ export default function PlansClient({
                 )}
                 {id === 'BASIC' && (
                   <p className="text-xs text-indigo-700 bg-indigo-50 rounded-lg px-2.5 py-1.5 mb-2 inline-block">
-                    Condição de lançamento — enquanto a plataforma está começando
+                    Condição de lançamento
                   </p>
                 )}
                 {id === 'DESTAQUE' && testeDisponivel && (
                   <p className="text-xs text-green-800 bg-green-50 rounded-lg px-2.5 py-1.5 mb-2 inline-block font-semibold">
-                    60 dias grátis para os 50 primeiros · {vagasDoTeste} {vagasDoTeste === 1 ? 'vaga' : 'vagas'}
+                    60 dias grátis para os 50 primeiros
                   </p>
                 )}
                 <p className="text-xs text-gray-500 mb-5">{plan.descricao}</p>
