@@ -4,20 +4,29 @@ export const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
   : null
 
+// Condição de lançamento: enquanto não há movimento, o plano gratuito permite 5
+// anúncios em vez de 1. Um corretor com 20 imóveis não começa com 1 — e inventário
+// é o que falta, não margem no plano de entrada.
+//
+// Para encerrar o lançamento, basta voltar este número para 1. Ninguém perde anúncio:
+// o limite só é conferido ao publicar e ao reativar, então quem já estiver com cinco
+// no ar continua com eles, e apenas não acrescenta mais.
+export const LIMITE_BASICO = 5
+
 export const PLANOS = {
   BASIC: {
     id: 'BASIC',
     nome: 'Básico',
     preco: 0,
     precoAnual: 0,
-    anuncios: 1,
+    anuncios: LIMITE_BASICO,
     destaques: 0,
     foguetes: 0,
     verificacao: false,
     cor: 'gray',
     descricao: 'Para quem quer anunciar um imóvel gratuitamente',
     recursos: [
-      '1 anúncio ativo',
+      `${LIMITE_BASICO} anúncios ativos durante o lançamento`,
       'Fotos ilimitadas',
       'Chat com interessados',
       'Botão de WhatsApp no anúncio',

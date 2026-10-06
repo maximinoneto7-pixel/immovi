@@ -142,6 +142,11 @@ export default function PlansClient({ plans, currentPlan, isLoggedIn }: PlansCli
                     </span>
                   </div>
                 )}
+                {id === 'BASIC' && (
+                  <p className="text-xs text-indigo-700 bg-indigo-50 rounded-lg px-2.5 py-1.5 mb-2 inline-block">
+                    Condição de lançamento — enquanto a plataforma está começando
+                  </p>
+                )}
                 <p className="text-xs text-gray-500 mb-5">{plan.descricao}</p>
 
                 {/* Recursos */}
