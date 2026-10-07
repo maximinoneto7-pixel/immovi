@@ -7,6 +7,7 @@ import Footer from '@/components/layout/Footer'
 import { Users, Shield, ArrowLeft, UserCheck, Home, MessageCircle, Search } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import PlanoCortesia from '@/components/admin/PlanoCortesia'
+import ConfirmarEmail from '@/components/admin/ConfirmarEmail'
 import { PLANOS, type PlanoId } from '@/lib/stripe'
 
 export default async function AdminUsuariosPage({
@@ -150,6 +151,11 @@ export default async function AdminUsuariosPage({
                         }`}>
                           {u.verified ? '✓ Verificado' : 'Pendente'}
                         </span>
+                        {!u.emailVerified && (
+                          <div className="mt-1.5">
+                            <ConfirmarEmail userId={u.id} />
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3.5 text-center">
                         <PlanoCortesia
