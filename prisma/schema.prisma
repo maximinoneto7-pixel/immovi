@@ -553,6 +553,20 @@ model AccessLog {
   @@index([type, createdAt])
 }
 
+// Cada execução da rotina diária, para saber se ela parou de rodar.
+// Sem isto, o cron podia morrer em silêncio: destaques não venceriam, propostas
+// não expirariam, planos não encerrariam, e ninguém ficaria sabendo.
+model SystemRun {
+  id        String   @id @default(cuid())
+  task      String   @default("manutencao")
+  ok        Boolean  @default(true)
+  detail    String?
+  ms        Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([task, createdAt])
+}
+
 model PageView {
   id        String   @id @default(cuid())
   path      String

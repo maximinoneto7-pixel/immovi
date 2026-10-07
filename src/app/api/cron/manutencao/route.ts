@@ -5,6 +5,8 @@ import { soData, nomeDoPeriodo, dataPorExtenso } from '@/lib/visitas'
 import { sendVisitReminderEmail, sendPlanEndingEmail, sendPlanEndedEmail } from '@/lib/email'
 import { listingLimit } from '@/lib/subscription'
 import { sincronizarRanking } from '@/lib/ranking'
+import { registrarExecucao, LIMITE_HORAS } from '@/lib/rotina'
+import { avisarErro } from '@/lib/alerta-erro'
 import { PLANOS } from '@/lib/stripe'
 import { sendPushToUser } from '@/lib/push'
 
@@ -19,6 +21,39 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Não autorizado.' }, { status: 401 })
   }
 
+  const comecou = Date.now()
+
+  try {
+    const resultado = await rodarManutencao()
+
+    // O registro guarda quanto tempo passou desde a execução anterior. Se a rotina
+    // ficou parada, quem avisa é ela mesma assim que volta: é o único momento em que
+    // temos certeza de que o agendador voltou a funcionar.
+    const horasParada = await registrarExecucao({
+      ok: true,
+      detail: JSON.stringify(resultado),
+      ms: Date.now() - comecou,
+    })
+
+    if (horasParada !== null && horasParada > LIMITE_HORAS) {
+      await avisarErro('rotina diária ficou sem rodar', new Error(
+        `A manutenção passou ${Math.round(horasParada)} horas sem rodar (o normal é 24). ` +
+        'Pode ter sido falha do agendador da Vercel ou erro não tratado. Vale conferir os logs do cron.'
+      ), { horasParada: Math.round(horasParada) }).catch(() => {})
+    }
+
+    console.log('[Manutenção diária]', JSON.stringify(resultado))
+    return Response.json(resultado)
+  } catch (err) {
+    // Antes, uma exceção aqui morria no log da Vercel e ninguém ficava sabendo
+    await registrarExecucao({ ok: false, detail: (err as Error).message, ms: Date.now() - comecou }).catch(() => {})
+    await avisarErro('rotina diária', err).catch(() => {})
+    return Response.json({ error: 'A rotina falhou. O aviso foi enviado.' }, { status: 500 })
+  }
+}
+
+/** O trabalho em si. Lança se algo falhar — quem avisa é o GET acima. */
+async function rodarManutencao() {
   const agora = new Date()
 
   // ── Destaques (Foguete) vencidos ──────────────────────────────────────────
@@ -190,6 +225,6 @@ export async function GET(request: Request) {
     planosAvisados: aVencer.length, planosEncerrados, anunciosPausados,
     em: agora.toISOString(),
   }
-  console.log('[Manutenção diária]', JSON.stringify(resultado))
-  return Response.json(resultado)
+
+  return resultado
 }

@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import EvolutionChart from '@/components/admin/EvolutionChart'
 import { bucketByDay } from '@/lib/analytics'
+import { estadoDaRotina, comoEstaATexto } from '@/lib/rotina'
 import {
   Users, Home, MessageCircle, TrendingUp, Shield,
   Eye, UserCheck, AlertTriangle, Crown, Rocket,
@@ -64,6 +65,8 @@ export default async function AdminPage() {
     }),
     0, // placeholder para denúncias futuras
   ])
+
+  const rotina = await estadoDaRotina()
 
   const usersByRole = await prisma.user.groupBy({
     by: ['role'],
@@ -145,6 +148,23 @@ export default async function AdminPage() {
               </Link>
             </div>
           </div>
+
+          {/* Rotina diária: só aparece quando há o que avisar */}
+          {(rotina.atrasada || rotina.falhou) && (
+            <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-4">
+              <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <div className="font-semibold text-red-900 text-sm">
+                  {rotina.falhou ? 'A rotina diária falhou na última execução' : 'A rotina diária parou de rodar'}
+                </div>
+                <p className="text-xs text-red-800 mt-1 leading-relaxed">
+                  {comoEstaATexto(rotina)}. Enquanto ela não roda, destaque vencido continua no topo, proposta
+                  vencida continua aberta, plano vencido continua valendo e a cota de Foguete não renova.
+                  Confira o cron em /api/cron/manutencao nos logs da Vercel.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* KPIs principais */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
