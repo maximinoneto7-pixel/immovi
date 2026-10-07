@@ -59,8 +59,8 @@ const GANHOS = [
     icon: BadgeCheck,
     titulo: 'Selo de CRECI conferido',
     texto:
-      'Você envia o número e a gente confere. O selo aparece no seu perfil e nos seus anúncios — ' +
-      'quem está do outro lado vê que fala com profissional registrado.',
+      'Você envia o número e a gente confere na consulta pública do COFECI, uma por uma, olhando se o ' +
+      'registro existe e se o nome bate. O selo aparece no seu perfil e nos seus anúncios.',
   },
 ]
 
@@ -184,20 +184,9 @@ export default async function CorretoresPage() {
         {/* O sistema, antes de criar conta */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
           <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-1">Veja antes de criar conta</h2>
-          <p className="text-gray-500 mb-8">O que você vai usar no dia a dia, sem precisar se cadastrar para descobrir.</p>
+          <p className="text-gray-500 mb-8">O relatório e o Foguete, como aparecem para quem anuncia.</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <Janela titulo="Anúncio com botão de WhatsApp">
-              <div className="h-full flex flex-col gap-2">
-                <div className="h-16 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300" />
-                <div className="h-2.5 w-3/4 rounded bg-gray-200" />
-                <div className="h-2.5 w-1/2 rounded bg-gray-100" />
-                <div className="mt-auto h-9 rounded-lg bg-[#25D366] flex items-center justify-center">
-                  <MessageCircle className="w-4 h-4 text-white" />
-                </div>
-              </div>
-            </Janela>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl">
             <Janela titulo="Relatório de cada anúncio">
               <div className="h-full flex flex-col gap-3">
                 <div className="flex gap-2">
