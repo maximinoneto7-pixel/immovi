@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useActionState } from 'react'
+import { Suspense, useState, useActionState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Home, Mail, Lock, Eye, EyeOff, User, Phone, Shield,
@@ -40,10 +41,24 @@ const PROFILES = [
   },
 ]
 
-export default function CadastroPage() {
+// Quem chega de uma página feita para um perfil já cai no formulário certo:
+// /cadastro?perfil=corretor pula a escolha. Valor desconhecido cai na escolha normal.
+const ATALHOS: Record<string, ProfileType> = {
+  corretor: 'AGENT',
+  agent: 'AGENT',
+  vendedor: 'SELLER',
+  seller: 'SELLER',
+  comprador: 'BUYER',
+  buyer: 'BUYER',
+}
+
+function CadastroConteudo() {
+  const searchParams = useSearchParams()
+  const atalho = ATALHOS[(searchParams.get('perfil') || '').toLowerCase()]
+
   const [showPassword, setShowPassword] = useState(false)
-  const [step, setStep] = useState<'choose' | 'form'>('choose')
-  const [profile, setProfile] = useState<ProfileType>('BUYER')
+  const [step, setStep] = useState<'choose' | 'form'>(atalho ? 'form' : 'choose')
+  const [profile, setProfile] = useState<ProfileType>(atalho || 'BUYER')
 
   const [state, action, isPending] = useActionState(
     async (_: unknown, formData: FormData) => registerUser(formData),
@@ -264,5 +279,13 @@ export default function CadastroPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CadastroPage() {
+  return (
+    <Suspense fallback={null}>
+      <CadastroConteudo />
+    </Suspense>
   )
 }
