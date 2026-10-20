@@ -573,6 +573,7 @@ export default async function PropertyDetailPage({
               {canManage && (
                 <ManageListingPanel
                   propertyId={property.id}
+                  podeEditar={isOwner}
                   status={property.status}
                   listingType={property.listingType}
                   stats={{

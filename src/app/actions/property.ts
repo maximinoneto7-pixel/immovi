@@ -152,7 +152,7 @@ export async function createPropertyAndReturn(formData: FormData) {
 
 // ─── Gestão do anúncio pelo dono (ou admin) ──────────────────────────────────
 
-async function getManageableProperty(propertyId: string) {
+async function getManageableProperty(propertyId: string, apenasDono = false) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Não autenticado.' } as const
 
@@ -168,10 +168,18 @@ async function getManageableProperty(propertyId: string) {
   if (!property || property.status === 'DELETED') return { error: 'Anúncio não encontrado.' } as const
 
   const isAdmin = session.user.role === 'ADMIN'
-  if (property.ownerId !== session.user.id && !isAdmin) {
+  const isOwner = property.ownerId === session.user.id
+
+  // O administrador modera, não escreve. Pausar e remover ele faz; mexer no texto,
+  // nas fotos ou no preço de um anúncio alheio, não — quem edita o que está
+  // publicado assume a autoria daquilo, e moderação não é autoria.
+  if (apenasDono && !isOwner) {
+    return { error: 'Só quem anunciou pode editar este anúncio.' } as const
+  }
+  if (!isOwner && !isAdmin) {
     return { error: 'Você não pode alterar este anúncio.' } as const
   }
-  return { property, isAdmin } as const
+  return { property, isAdmin, isOwner } as const
 }
 
 function revalidateProperty(propertyId: string) {
@@ -182,7 +190,7 @@ function revalidateProperty(propertyId: string) {
 }
 
 export async function updateProperty(propertyId: string, formData: FormData) {
-  const access = await getManageableProperty(propertyId)
+  const access = await getManageableProperty(propertyId, true)
   if ('error' in access) return { error: access.error }
   const { property } = access
 

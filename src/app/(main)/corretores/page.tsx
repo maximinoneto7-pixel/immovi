@@ -15,7 +15,7 @@ export const metadata = {
     'O contato do interessado chega direto no seu WhatsApp, sem passar por intermediário. 60 dias do plano Destaque, sem cartão.',
 }
 
-const WHATSAPP = 'https://wa.me/556294263425?text=' + encodeURIComponent(
+const WHATSAPP = 'https://wa.me/5564984231292?text=' + encodeURIComponent(
   'Olá! Sou corretor(a) e vi a página da Immovi para corretores. Queria entender melhor antes de criar conta.'
 )
 

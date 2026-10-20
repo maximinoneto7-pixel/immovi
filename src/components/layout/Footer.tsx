@@ -124,7 +124,7 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="https://wa.me/556294263425"
+                  href="https://wa.me/5564984231292"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-start gap-3 group"
@@ -135,7 +135,7 @@ export default function Footer() {
                   <div>
                     <div className="text-xs text-gray-500 mb-0.5">WhatsApp</div>
                     <div className="text-gray-300 group-hover:text-green-400 transition-colors">
-                      +55 62 94263-1425
+                      +55 64 98423-1292
                     </div>
                   </div>
                 </a>

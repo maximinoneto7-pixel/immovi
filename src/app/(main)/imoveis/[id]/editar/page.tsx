@@ -22,8 +22,10 @@ export default async function EditarImovelPage({ params }: { params: Promise<{ i
       features: { select: { name: true } },
     },
   })
-  const canManage = property && (property.ownerId === session.user.id || session.user.role === 'ADMIN')
-  if (!property || !canManage || property.status === 'DELETED') notFound()
+  // Só quem anunciou edita o próprio anúncio: o administrador modera pausando
+  // ou removendo, nunca reescrevendo o texto de outra pessoa.
+  const ehDono = property && property.ownerId === session.user.id
+  if (!property || !ehDono || property.status === 'DELETED') notFound()
 
   return (
     <>

@@ -9,6 +9,8 @@ import { cn, PROPERTY_STATUS } from '@/lib/utils'
 
 interface ManageListingPanelProps {
   propertyId: string
+  /** Só o dono edita o conteúdo; o administrador apenas pausa ou remove */
+  podeEditar?: boolean
   status: string
   listingType: string
   stats: { views: number; favorites: number; conversations: number }
@@ -22,7 +24,9 @@ const STATUS_PILL: Record<string, string> = {
   RENTED: 'bg-indigo-100 text-indigo-700',
 }
 
-export default function ManageListingPanel({ propertyId, status, listingType, stats }: ManageListingPanelProps) {
+export default function ManageListingPanel({ propertyId, status, listingType, stats,
+  podeEditar = false,
+}: ManageListingPanelProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [pendingAction, setPendingAction] = useState<ManageableStatus | null>(null)
@@ -93,12 +97,19 @@ export default function ManageListingPanel({ propertyId, status, listingType, st
       )}
 
       <div className="space-y-2">
-        <Link
-          href={`/imoveis/${propertyId}/editar`}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors"
-        >
-          <Pencil className="w-4 h-4" /> Editar anúncio e fotos
-        </Link>
+        {podeEditar ? (
+          <Link
+            href={`/imoveis/${propertyId}/editar`}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors"
+          >
+            <Pencil className="w-4 h-4" /> Editar anúncio e fotos
+          </Link>
+        ) : (
+          <p className="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2.5 leading-relaxed">
+            Você está vendo isto como administrador. Dá para pausar ou remover o anúncio;
+            o texto e as fotos só quem anunciou pode mudar.
+          </p>
+        )}
 
         {isActive ? (
           <button onClick={() => change('INACTIVE')} disabled={isPending}
