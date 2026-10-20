@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createPropertyAndReturn, updateProperty } from '@/app/actions/property'
 import { PROPERTY_TYPES, STATES, M2_PER_HECTARE, formatAlqueires, isRural } from '@/lib/utils'
 import { typeFields, RURAL_IMPROVEMENTS } from '@/lib/property-fields'
+import TextoQueCresce from '@/components/common/TextoQueCresce'
 import {
   AlertCircle, Info, Upload, X,
   Shield, CheckCircle2, Loader2, FileText,
@@ -475,9 +476,13 @@ export default function NewPropertyForm({ userId, propertyId, initial }: NewProp
           <h2 className="font-bold text-gray-900 text-lg border-b border-gray-100 pb-3">3. Descrição e história</h2>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Descrição do imóvel *</label>
-            <textarea name="description" required rows={4} defaultValue={initial?.description}
+            <TextoQueCresce
+              name="description"
+              required
+              defaultValue={initial?.description}
               placeholder="Descreva o imóvel: tamanho dos cômodos, reformas, diferenciais..."
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+              dica="Anúncios bem descritos recebem mais contato"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
@@ -488,9 +493,11 @@ export default function NewPropertyForm({ userId, propertyId, initial }: NewProp
               <Info className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-gray-500">Conte o que ama neste lugar. Isso cria conexão com o comprador e diferencia seu anúncio!</p>
             </div>
-            <textarea name="story" rows={4} defaultValue={initial?.story ?? undefined}
-              placeholder='Ex: "Morei aqui por 10 anos. O que mais vou sentir falta é o silêncio pela manhã..."'
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none bg-amber-50" />
+            <TextoQueCresce
+              name="story"
+              defaultValue={initial?.story}
+              placeholder={'Ex: "Morei aqui por 10 anos. O que mais vou sentir falta é o silêncio pela manhã..."'}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -532,7 +539,7 @@ export default function NewPropertyForm({ userId, propertyId, initial }: NewProp
               onChange={(e) => setCustomFeatures(e.target.value)}
               rows={3}
               placeholder={rural ? 'Ex: Casa sede com 3 quartos e varanda\n2 represas com peixes' : 'Ex: Vista para a serra\nQuadra de tênis'}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y" />
           </div>
         </div>
 

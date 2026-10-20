@@ -91,12 +91,34 @@ export async function POST(request: Request) {
       })
     }
 
-    // Analisar com Claude IA
-    const { analysis, ownerMatch, ownerMatchDetails } = await analyzePropertyDocument(
-      base64,
-      file.type,
-      property.owner.name
-    )
+    // A leitura automática é um extra, não um pedágio: se nenhum provedor configurado
+    // lê este formato (a matrícula costuma vir em PDF) ou a análise falha, o documento
+    // não se perde — fica na fila para alguém conferir à mão, que é o que valia antes
+    // de existir IA. Mandar o cliente embora com erro é o único desfecho inaceitável.
+    let leitura
+    try {
+      leitura = await analyzePropertyDocument(base64, file.type, property.owner.name)
+    } catch (err) {
+      await prisma.propertyDocument.update({
+        where: { id: doc.id },
+        data: { status: 'PENDING', aiAnalysis: `leitura automática indisponível: ${(err as Error).message}` },
+      })
+
+      const dono = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { email: true, name: true },
+      })
+      if (dono) sendDocumentQueuedEmail(dono.email, dono.name, property.title).catch(console.error)
+
+      return Response.json({
+        success: true,
+        documentId: doc.id,
+        emAnalise: true,
+        mensagem: 'Documento recebido. Nossa equipe vai conferir e o selo aparece no anúncio assim que for aprovado.',
+      })
+    }
+
+    const { analysis, ownerMatch, ownerMatchDetails } = leitura
 
     // Atualizar documento com resultado
     const updatedDoc = await prisma.propertyDocument.update({
@@ -156,21 +178,8 @@ export async function POST(request: Request) {
   } catch (error: any) {
     avisarErro('verificação de documento', error)
 
-    // Nenhum provedor configurado aceita este formato (ex.: PDF com só o Grok ativo)
-    if (error.message === 'NENHUMA_CHAVE') {
-      return Response.json({
-        error: 'Não foi possível ler este formato agora. Envie uma foto do documento em JPG ou PNG.',
-      }, { status: 503 })
-    }
-
-    if (error.message?.includes('JSON')) {
-      return Response.json({
-        error: 'Não consegui extrair os dados. Envie uma foto mais nítida do documento.',
-      }, { status: 422 })
-    }
-
     return Response.json({
-      error: 'Erro ao analisar o documento. Tente novamente.',
+      error: 'Não consegui receber o documento agora. Tente novamente em instantes.',
     }, { status: 500 })
   }
 }

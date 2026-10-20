@@ -16,6 +16,9 @@ const PROVIDER: StorageProvider = (process.env.STORAGE_PROVIDER as StorageProvid
 const LOCAL_UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads')
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+// A matrícula sai do cartório em PDF. Sem isto, o documento era aceito pela rota e
+// descartado aqui em silêncio — e depois não havia arquivo nenhum para conferir.
+const ALLOWED_TYPES_DOC = [...ALLOWED_TYPES, 'application/pdf']
 
 export interface UploadResult {
   url: string
@@ -26,9 +29,12 @@ export interface UploadResult {
 
 // ─── Validação ────────────────────────────────────────────────────────────────
 
-export function validateFile(file: File): string | null {
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return `Formato não suportado. Use: JPG, PNG, WebP ou GIF.`
+export function validateFile(file: File, aceitarPdf = false): string | null {
+  const aceitos = aceitarPdf ? ALLOWED_TYPES_DOC : ALLOWED_TYPES
+  if (!aceitos.includes(file.type)) {
+    return aceitarPdf
+      ? 'Formato não suportado. Use: PDF, JPG, PNG ou WebP.'
+      : 'Formato não suportado. Use: JPG, PNG, WebP ou GIF.'
   }
   if (file.size > MAX_FILE_SIZE) {
     return `Arquivo muito grande. Máximo: 10MB. Seu arquivo: ${(file.size / 1024 / 1024).toFixed(1)}MB`
@@ -91,7 +97,8 @@ export async function uploadFile(
   file: File,
   folder: string = 'imoveis'
 ): Promise<UploadResult> {
-  const error = validateFile(file)
+  // A pasta de documentos guarda matrícula, que costuma vir em PDF
+  const error = validateFile(file, folder === 'documentos')
   if (error) throw new Error(error)
 
   const bytes = await file.arrayBuffer()
