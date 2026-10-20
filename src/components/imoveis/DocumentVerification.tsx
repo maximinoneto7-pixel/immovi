@@ -1,5 +1,6 @@
 'use client'
 
+import { shrinkImage } from '@/lib/image-resize'
 import { useState, useRef } from 'react'
 import {
   Shield, Upload, CheckCircle2, XCircle, AlertTriangle,
@@ -61,11 +62,21 @@ export default function DocumentVerification({
       setError('Formato não suportado. Use PDF, JPG, PNG ou WebP.')
       return
     }
-    if (file.size > 4 * 1024 * 1024) {
-      setError('Arquivo muito grande. Máximo 4MB.')
+    // Foto de celular passa fácil de 4 MB; a mesma redução usada nas fotos do
+    // anúncio resolve aqui. PDF não dá para encolher e segue como veio.
+    const pronto = await shrinkImage(file)
+    const mb = (b: number) => `${(b / 1024 / 1024).toFixed(1)} MB`
+
+    if (pronto.size > 4 * 1024 * 1024) {
+      setError(
+        pronto.type === 'application/pdf'
+          ? `O PDF tem ${mb(pronto.size)} e o limite de envio é 4 MB. Mande uma foto da matrícula, que a gente reduz sozinho.`
+          : `Não consegui reduzir esta imagem o bastante (${mb(pronto.size)}). Tente outra foto.`
+      )
       return
     }
-    setSelectedFile(file)
+
+    setSelectedFile(pronto)
     setError('')
   }
 

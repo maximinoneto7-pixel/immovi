@@ -7,6 +7,8 @@ import { createPropertyAndReturn, updateProperty } from '@/app/actions/property'
 import { PROPERTY_TYPES, STATES, M2_PER_HECTARE, formatAlqueires, isRural } from '@/lib/utils'
 import { typeFields, RURAL_IMPROVEMENTS } from '@/lib/property-fields'
 import TextoQueCresce from '@/components/common/TextoQueCresce'
+import CampoMoeda from '@/components/common/CampoMoeda'
+import { shrinkImage } from '@/lib/image-resize'
 import {
   AlertCircle, Info, Upload, X,
   Shield, CheckCircle2, Loader2, FileText,
@@ -113,11 +115,19 @@ export default function NewPropertyForm({ userId, propertyId, initial }: NewProp
   } | null>(null)
   const docInputRef = useRef<HTMLInputElement>(null)
 
-  const handleDocFile = (file: File) => {
+  const handleDocFile = async (file: File) => {
     const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
     if (!allowed.includes(file.type)) { setError('Documento: use PDF, JPG, PNG ou WebP.'); return }
-    if (file.size > 4 * 1024 * 1024) { setError('Documento muito grande. Máximo 4MB.'); return }
-    setDocFile(file)
+
+    // Foto grande é reduzida aqui; PDF grande continua sem caber no envio
+    const pronto = await shrinkImage(file)
+    if (pronto.size > 4 * 1024 * 1024) {
+      setError(pronto.type === 'application/pdf'
+        ? 'O PDF passa de 4 MB. Mande uma foto da matrícula, que a gente reduz sozinho.'
+        : 'Não consegui reduzir esta imagem o bastante. Tente outra foto.')
+      return
+    }
+    setDocFile(pronto)
     setDocResult(null)
     setError('')
   }
@@ -278,14 +288,12 @@ export default function NewPropertyForm({ userId, propertyId, initial }: NewProp
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 {listingType === 'RENT' ? 'Valor do aluguel (R$) *' : 'Preço de venda (R$) *'}
               </label>
-              <input type="number" name="price" required min={0} step="any" placeholder="Ex: 450000" defaultValue={initial?.price}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <CampoMoeda name="price" required defaultValue={initial?.price} />
             </div>
             {listingType === 'BOTH' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Valor do aluguel (R$)</label>
-                <input type="number" name="rentPrice" min={0} placeholder="Ex: 2500" defaultValue={initial?.rentPrice ?? undefined}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <CampoMoeda name="rentPrice" defaultValue={initial?.rentPrice} />
               </div>
             )}
           </div>
@@ -369,11 +377,7 @@ export default function NewPropertyForm({ userId, propertyId, initial }: NewProp
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Condomínio (R$/mês)
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">R$</span>
-                    <input type="number" name="condoFee" min={0} step="any" placeholder="0,00" defaultValue={initial?.condoFee ?? undefined}
-                      className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                  </div>
+                  <CampoMoeda name="condoFee" defaultValue={initial?.condoFee} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -394,11 +398,7 @@ export default function NewPropertyForm({ userId, propertyId, initial }: NewProp
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     IPTU (R$/mês)
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">R$</span>
-                    <input type="number" name="iptu" min={0} step="any" placeholder="0,00" defaultValue={initial?.iptu ?? undefined}
-                      className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                  </div>
+                  <CampoMoeda name="iptu" defaultValue={initial?.iptu} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">

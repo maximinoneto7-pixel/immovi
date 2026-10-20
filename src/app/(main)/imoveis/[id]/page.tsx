@@ -346,13 +346,20 @@ export default async function PropertyDetailPage({
                       </div>
                     )}
                   </div>
+                  {/* Audiência é assunto de quem anuncia: para o visitante, número
+                      baixo só diz que ninguém passou por aqui. A data fica, porque
+                      saber de quando é o anúncio interessa a quem procura. */}
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400 sm:ml-auto">
-                    <span className="flex items-center gap-1 whitespace-nowrap">
-                      <Eye className="w-4 h-4 flex-shrink-0" /> {property.views} {property.views === 1 ? 'visualização' : 'visualizações'}
-                    </span>
-                    <span className="flex items-center gap-1 whitespace-nowrap">
-                      <Heart className="w-4 h-4 flex-shrink-0" /> {property._count.favorites}
-                    </span>
+                    {canManage && (
+                      <>
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <Eye className="w-4 h-4 flex-shrink-0" /> {property.views} {property.views === 1 ? 'visualização' : 'visualizações'}
+                        </span>
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <Heart className="w-4 h-4 flex-shrink-0" /> {property._count.favorites}
+                        </span>
+                      </>
+                    )}
                     <span className="flex items-center gap-1 whitespace-nowrap">
                       <Calendar className="w-4 h-4 flex-shrink-0" /> {formatDate(property.createdAt)}
                     </span>

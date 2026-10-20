@@ -14,7 +14,9 @@ export type StorageProvider = 'local' | 'blob' | 'r2' | 's3'
 const PROVIDER: StorageProvider = (process.env.STORAGE_PROVIDER as StorageProvider)
   || (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID ? 'blob' : 'local')
 const LOCAL_UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads')
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+// A Vercel corta a requisição em 4,5 MB, então nada maior chega até aqui.
+// O cliente reduz a imagem antes de enviar (lib/image-resize).
+const MAX_FILE_SIZE = 4 * 1024 * 1024
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
 // A matrícula sai do cartório em PDF. Sem isto, o documento era aceito pela rota e
 // descartado aqui em silêncio — e depois não havia arquivo nenhum para conferir.

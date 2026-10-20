@@ -172,7 +172,7 @@ export default function PhotoUpload({
                 : 'Adicionar mais fotos'}
             </p>
             <p className="text-xs text-gray-400">
-              JPG, PNG, WebP · Máx. 10MB por foto · Até {maxPhotos} fotos
+              JPG, PNG ou WebP · Até {maxPhotos} fotos · Fotos grandes são reduzidas sozinhas
               {photos.length > 0 && ` · ${photos.length}/${maxPhotos} adicionadas`}
             </p>
           </div>
