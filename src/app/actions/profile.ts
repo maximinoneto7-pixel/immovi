@@ -1,10 +1,14 @@
 'use server'
 
-import { auth } from '@/lib/auth'
+import { auth, unstable_update } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { validarCPF } from '@/lib/cpf'
 import bcrypt from 'bcryptjs'
+
+const PAPEIS = ['BUYER', 'SELLER', 'AGENT'] as const
+type Papel = (typeof PAPEIS)[number]
+const COMO = { BUYER: 'comprador', SELLER: 'vendedor', AGENT: 'corretor' } as const
 
 export async function updateProfile(formData: FormData) {
   const session = await auth()
@@ -27,6 +31,27 @@ export async function updateProfile(formData: FormData) {
 
   if (!name) return { error: 'Nome é obrigatório.' }
 
+  const conta = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  })
+  if (!conta) return { error: 'Conta não encontrada.' }
+
+  // Troca de perfil. Admin fica de fora: trocaria sem querer e perderia o painel.
+  const pedido = (formData.get('role') as string || '').trim()
+  const role = conta.role !== 'ADMIN' && PAPEIS.includes(pedido as Papel) ? pedido : conta.role
+
+  // As exigências do cadastro valem na troca, e só nela: contas antigas sem CPF
+  // continuam podendo salvar telefone e bio sem ter que resolver isso agora.
+  if (role !== conta.role) {
+    if ((role === 'SELLER' || role === 'AGENT') && !cpf) {
+      return { error: `Para usar a conta como ${COMO[role as Papel]}, informe o CPF.` }
+    }
+    if (role === 'AGENT' && (!creci || !creciState)) {
+      return { error: 'Para usar a conta como corretor, informe o CRECI e o estado dele.' }
+    }
+  }
+
   if (cpf) {
     if (!validarCPF(cpf.replace(/\D/g, ''))) {
       return { error: 'CPF inválido. Verifique o número informado.' }
@@ -47,6 +72,7 @@ export async function updateProfile(formData: FormData) {
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
+      role,
       name,
       phone: phone || null,
       bio: bio || null,
@@ -64,7 +90,18 @@ export async function updateProfile(formData: FormData) {
     },
   })
 
+  // O papel também vive no token da sessão: sem renovar, o rótulo no menu só
+  // mudaria depois de sair e entrar de novo.
+  if (role !== conta.role) {
+    try {
+      await unstable_update({ user: { role } })
+    } catch (err) {
+      console.error('[Sessão] não renovou o papel:', err)
+    }
+  }
+
   revalidatePath('/perfil')
+  revalidatePath('/perfil/editar')
   return { success: true }
 }
 

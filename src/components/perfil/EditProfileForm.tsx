@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { updateProfile } from '@/app/actions/profile'
 import CpfInput from '@/components/common/CpfInput'
 import AvatarUpload from '@/components/perfil/AvatarUpload'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { STATES } from '@/lib/utils'
+import { AlertCircle, Loader2, User, Home, Building2 } from 'lucide-react'
+import { STATES, cn } from '@/lib/utils'
 
 interface EditProfileFormProps {
   user: {
@@ -28,11 +28,24 @@ interface EditProfileFormProps {
   }
 }
 
+// Os mesmos perfis do cadastro, com os mesmos nomes — quem já viu a tela de
+// criar conta reconhece esta.
+const PERFIS = [
+  { id: 'BUYER', icon: User, label: 'Comprador / Locatário', desc: 'Quero encontrar imóveis para comprar ou alugar' },
+  { id: 'SELLER', icon: Home, label: 'Vendedor Particular', desc: 'Sou proprietário e quero anunciar meu imóvel diretamente' },
+  { id: 'AGENT', icon: Building2, label: 'Corretor de Imóveis', desc: 'Sou corretor credenciado com CRECI ativo' },
+] as const
+
 export default function EditProfileForm({ user }: EditProfileFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
-  const isAgent = user.role === 'AGENT'
+  // O perfil escolhido vale na hora: os campos de corretor aparecem sem salvar
+  const [role, setRole] = useState(user.role)
+  const [temCpf, setTemCpf] = useState(!!user.cpf)
+  const isAgent = role === 'AGENT'
+  // Admin não troca por aqui: se virasse comprador sem querer, perderia o painel
+  const podeTrocar = user.role !== 'ADMIN'
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -59,6 +72,49 @@ export default function EditProfileForm({ user }: EditProfileFormProps) {
         </div>
       )}
 
+      {podeTrocar && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div className="border-b border-gray-100 pb-3">
+            <h2 className="font-bold text-gray-900 text-lg">Como você usa a Immovi</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Você pode mudar quando quiser. Seus anúncios continuam no ar.</p>
+          </div>
+
+          <input type="hidden" name="role" value={role} />
+
+          <div className="space-y-2.5">
+            {PERFIS.map(({ id, icon: Icon, label, desc }) => {
+              const ativo = role === id
+              return (
+                <button key={id} type="button" onClick={() => setRole(id)} aria-pressed={ativo}
+                  className={cn('w-full flex items-start gap-3 text-left p-4 border rounded-xl transition-colors',
+                    ativo ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300')}>
+                  <span className={cn('flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center',
+                    ativo ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500')}>
+                    <Icon className="w-5 h-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold text-gray-900 text-sm">{label}</span>
+                    <span className="block text-xs text-gray-500 mt-0.5">{desc}</span>
+                  </span>
+                  <span className={cn('flex-shrink-0 w-5 h-5 rounded-full border-2 mt-0.5',
+                    ativo ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300')} />
+                </button>
+              )
+            })}
+          </div>
+
+          {(role === 'SELLER' || role === 'AGENT') && !temCpf && (
+            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+              <span>
+                Para anunciar como {role === 'AGENT' ? 'corretor' : 'vendedor'}, preencha o CPF abaixo.
+                É o mesmo que o cadastro pede.
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
         <h2 className="font-bold text-gray-900 text-lg border-b border-gray-100 pb-3">Dados pessoais</h2>
 
@@ -80,7 +136,7 @@ export default function EditProfileForm({ user }: EditProfileFormProps) {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               CPF <span className="text-gray-400 font-normal">(necessário para assinar planos e receber pagamentos)</span>
             </label>
-            <CpfInput defaultValue={user.cpf || ''} />
+            <CpfInput defaultValue={user.cpf || ''} onChange={(_, valor) => setTemCpf(valor.length > 0)} />
           </div>
         </div>
 

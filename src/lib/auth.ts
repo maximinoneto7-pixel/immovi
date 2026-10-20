@@ -117,7 +117,7 @@ if (process.env.APPLE_ID && process.env.APPLE_CLIENT_SECRET) {
 const isProdDomain = (process.env.NEXTAUTH_URL || '').includes('immovi.com.br')
 const cookieDomain = isProdDomain ? '.immovi.com.br' : undefined
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   providers,
   ...(cookieDomain
     ? {
@@ -130,7 +130,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
     : {}),
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
+      // Pedido de atualização (trocar de perfil, por exemplo): o papel vem do
+      // banco, nunca do que o cliente manda — senão daria para se promover.
+      if (trigger === 'update' && token.id) {
+        const atual = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true },
+        })
+        if (atual) token.role = atual.role
+      }
       if (user) {
         token.id = user.id
         token.role = (user as { role?: string }).role || 'BUYER'

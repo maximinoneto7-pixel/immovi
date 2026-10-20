@@ -13,6 +13,7 @@ import { emailGateOpen, UNVERIFIED_PUBLISH_ERROR } from '@/lib/email-verificatio
 import { after } from 'next/server'
 import { headers } from 'next/headers'
 import { registrar, origemDa } from '@/lib/registro'
+import { avisarErro } from '@/lib/alerta-erro'
 
 // Geocodifica endereço via Nominatim (OpenStreetMap)
 async function geocode(address: string, city: string, state: string) {
@@ -88,17 +89,33 @@ function readPropertyForm(formData: FormData) {
   return { data, images, features, error }
 }
 
-// Avisa quem tem busca salva compatível (assíncrono — não atrasa a publicação)
-function notifyAlertsFor(propertyId: string) {
-  prisma.property.findUnique({
-    where: { id: propertyId },
-    include: { images: { take: 1, orderBy: { order: 'asc' } } },
-  }).then((p) => {
-    if (p) notifyMatchingAlerts(p as any).catch(console.error)
-  }).catch(console.error)
+// Avisa quem tem busca salva compatível. Roda depois da resposta e engole as
+// próprias falhas: ninguém perde um anúncio publicado porque um e-mail falhou.
+async function notifyAlertsFor(propertyId: string) {
+  try {
+    const p = await prisma.property.findUnique({
+      where: { id: propertyId },
+      include: { images: { take: 1, orderBy: { order: 'asc' } } },
+    })
+    if (p) await notifyMatchingAlerts(p as any)
+  } catch (err) {
+    console.error('[Alertas]', err)
+  }
 }
 
 async function createFromForm(formData: FormData) {
+  try {
+    return await publicarAnuncio(formData)
+  } catch (err) {
+    // Publicar é o passo mais caro do site: a pessoa levou minutos preenchendo.
+    // Qualquer falha inesperada vira mensagem na tela, com o motivo no nosso
+    // e-mail — nunca a página de erro, que faz o trabalho dela parecer perdido.
+    await avisarErro('publicação de anúncio', err).catch(() => {})
+    return { error: 'Não consegui publicar agora. Já fui avisado do problema — tente de novo em instantes.' } as const
+  }
+}
+
+async function publicarAnuncio(formData: FormData) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Não autenticado.' } as const
 
@@ -135,7 +152,10 @@ async function createFromForm(formData: FormData) {
 
   revalidatePath('/imoveis')
   revalidatePath('/')
-  notifyAlertsFor(property.id)
+
+  // Avisar quem tem busca salva não pode derrubar a publicação que já deu certo
+  after(() => notifyAlertsFor(property.id))
+
   return { propertyId: property.id } as const
 }
 
