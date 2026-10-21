@@ -31,6 +31,7 @@ import { typeFields } from '@/lib/property-fields'
 import { activityLabel, isOnline } from '@/lib/presence-labels'
 import { responseSpeedFor, responseLabel } from '@/lib/response-time'
 import type { Metadata } from 'next'
+import { quemAnuncia } from '@/lib/papeis'
 
 // Título e texto que aparecem quando alguém compartilha o link (a imagem vem de opengraph-image.tsx)
 export async function generateMetadata({
@@ -87,7 +88,7 @@ export default async function PropertyDetailPage({
       owner: {
         select: {
           // O telefone só sai da página se a pessoa tiver ligado o botão de WhatsApp
-          id: true, name: true, image: true, phone: true, showWhatsapp: true,
+          id: true, name: true, image: true, phone: true, showWhatsapp: true, role: true,
           bio: true, verified: true, createdAt: true, lastSeenAt: true, showActivity: true,
           _count: { select: { properties: { where: { status: 'ACTIVE' } }, reviewsReceived: true } },
         },
@@ -637,6 +638,8 @@ export default async function PropertyDetailPage({
                         )}
                       </div>
                       <div className="text-xs text-gray-500">
+                        {quemAnuncia(property.owner.role)}
+                        {' · '}
                         {property.owner._count.properties} anúncio{property.owner._count.properties !== 1 ? 's' : ''}
                         {' · '}
                         Desde {new Date(property.owner.createdAt).getFullYear()}

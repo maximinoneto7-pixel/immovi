@@ -102,6 +102,12 @@ export async function updateProfile(formData: FormData) {
 
   revalidatePath('/perfil')
   revalidatePath('/perfil/editar')
+  // O papel aparece no cartão de cada anúncio: sem isto, a lista continuaria
+  // mostrando o rótulo antigo até a página ser refeita por outro motivo.
+  if (role !== conta.role) {
+    revalidatePath('/')
+    revalidatePath('/imoveis')
+  }
   return { success: true }
 }
 

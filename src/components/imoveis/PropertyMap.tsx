@@ -34,6 +34,8 @@ export default function PropertyMap({ properties, className = '' }: PropertyMapP
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return
 
+    let observador: ResizeObserver | null = null
+
     // Importa Leaflet dinamicamente (evita SSR)
     import('leaflet').then((L) => {
       // Fix ícones padrão do Leaflet
@@ -52,6 +54,13 @@ export default function PropertyMap({ properties, className = '' }: PropertyMapP
         scrollWheelZoom: true,
       })
 
+      // Leaflet mede o container na hora em que o mapa nasce. Se a altura ainda
+      // não existe — acontece quando o mapa entra junto com a página —, ele nasce
+      // com o tamanho errado e passa a mostrar um lugar que ninguém pediu.
+      map.invalidateSize()
+      observador = new ResizeObserver(() => map.invalidateSize())
+      observador.observe(mapRef.current!)
+
       // Tile layer OpenStreetMap (gratuito)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
@@ -65,6 +74,7 @@ export default function PropertyMap({ properties, className = '' }: PropertyMapP
     })
 
     return () => {
+      observador?.disconnect()
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove()
         mapInstanceRef.current = null

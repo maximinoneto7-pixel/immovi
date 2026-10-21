@@ -8,6 +8,7 @@ import { formatCurrency, formatArea, formatAlqueires, isRural, mainArea, PROPERT
 import { cn } from '@/lib/utils'
 import { getCompareIds, toggleCompareId, COMPARE_EVENT, COMPARE_MAX } from '@/lib/compare'
 import { toggleFavorite } from '@/app/actions/property'
+import { quemAnuncia } from '@/lib/papeis'
 
 interface PropertyCardProps {
   property: {
@@ -32,6 +33,7 @@ interface PropertyCardProps {
       name: string
       image?: string | null
       verified: boolean
+      role?: string | null
       /** Conta da própria Immovi: anúncio aparece como "Oficial Immovi" */
     }
     images: { url: string; isCover: boolean }[]
@@ -280,7 +282,7 @@ export default function PropertyCard({
                   <Shield className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
                 )}
               </div>
-              <span className="text-xs text-gray-400">Proprietário</span>
+              <span className="text-xs text-gray-400">{quemAnuncia(property.owner.role)}</span>
             </div>
         </div>
       </div>
