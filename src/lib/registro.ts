@@ -20,6 +20,7 @@ export type TipoRegistro =
   | 'TESTE_GRATIS'
   | 'PLANO_CORTESIA'
   | 'TERMOS_ACEITOS'
+  | 'RECADO_RECEBIDO'
   | 'EMAIL_CONFIRMADO_ADMIN'
 
 /**

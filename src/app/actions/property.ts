@@ -103,6 +103,19 @@ async function notifyAlertsFor(propertyId: string) {
   }
 }
 
+/**
+ * Guarda a escolha do anunciante sobre mostrar o WhatsApp no anúncio.
+ * A preferência é da pessoa, não do anúncio — mas é no formulário do anúncio
+ * que ela faz sentido e é vista.
+ */
+async function guardarEscolhaDoWhatsapp(formData: FormData, userId: string) {
+  // Caixa desmarcada não envia nada, então quem diz que a escolha veio é o campo
+  // oculto. Sem ele, um formulário antigo desligaria o WhatsApp sem querer.
+  if (formData.get('escolhaDoWhatsapp') !== '1') return
+  const mostrar = formData.get('mostrarWhatsapp') === 'true'
+  await prisma.user.update({ where: { id: userId }, data: { showWhatsapp: mostrar } })
+}
+
 async function createFromForm(formData: FormData) {
   try {
     return await publicarAnuncio(formData)
@@ -149,6 +162,7 @@ async function publicarAnuncio(formData: FormData) {
   })
 
   await sincronizarRanking(session.user.id)
+  await guardarEscolhaDoWhatsapp(formData, session.user.id)
 
   revalidatePath('/imoveis')
   revalidatePath('/')
@@ -233,6 +247,8 @@ export async function updateProperty(propertyId: string, formData: FormData) {
 
   // Preço que o anúncio mostra, antes e depois, para avisar quem favoritou se caiu
   const priceBefore = shownPrice(property)
+
+  await guardarEscolhaDoWhatsapp(formData, property.ownerId)
 
   const updated = await prisma.property.update({
     where: { id: propertyId },

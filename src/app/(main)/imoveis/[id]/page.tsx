@@ -10,7 +10,7 @@ import PropertyGallery from '@/components/imoveis/PropertyGallery'
 import ContactForm from '@/components/imoveis/ContactForm'
 import BoostPanel from '@/components/imoveis/BoostPanel'
 import { saldoDeFoguetes, DIAS_DO_FOGUETE } from '@/lib/foguetes'
-import { linkDoWhatsapp, recadoDoAnuncio } from '@/lib/whatsapp'
+import { linkDoWhatsapp, recadoDoAnuncio, recadoDeResposta } from '@/lib/whatsapp'
 import { SITE_URL } from '@/lib/site'
 import DocumentVerification from '@/components/imoveis/DocumentVerification'
 import ManageListingPanel from '@/components/imoveis/ManageListingPanel'
@@ -144,6 +144,20 @@ export default async function PropertyDetailPage({
         select: { boostType: true, expiresAt: true },
       })
     : null
+
+  // Recados de quem não tem conta: só existem aqui, então o dono precisa vê-los.
+  // O try protege a janela entre subir o código e aplicar a migration: sem a
+  // tabela, o anúncio continua abrindo normalmente, apenas sem este bloco.
+  const recados = isOwner
+    ? await prisma.recado
+        .findMany({
+          where: { propertyId: property.id },
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          select: { id: true, name: true, phone: true, message: true, createdAt: true },
+        })
+        .catch(() => [])
+    : []
 
   const saldoBruto = canManage && isOwner ? await saldoDeFoguetes(property.ownerId) : null
   const saldoFoguetes = saldoBruto
@@ -366,6 +380,36 @@ export default async function PropertyDetailPage({
                     </span>
                   </div>
                 </div>
+
+                {/* Recados: só o dono vê. Quem deixou não tem conta, então este
+                    é o único lugar no site onde esse contato aparece. */}
+                {isOwner && recados.length > 0 && (
+                  <div className="border border-green-200 bg-green-50 rounded-2xl p-4">
+                    <h3 className="font-semibold text-gray-900 text-sm mb-3">
+                      {recados.length} {recados.length === 1 ? 'pessoa deixou o telefone' : 'pessoas deixaram o telefone'}
+                    </h3>
+                    <ul className="space-y-2.5">
+                      {recados.map((r) => (
+                        <li key={r.id} className="bg-white border border-green-100 rounded-xl p-3">
+                          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                            <span className="font-semibold text-gray-900 text-sm">{r.name}</span>
+                            <span className="text-xs text-gray-400">{formatDate(r.createdAt)}</span>
+                          </div>
+                          <a
+                            href={linkDoWhatsapp(r.phone, recadoDeResposta(r.name, property.title)) || `tel:${r.phone}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 mt-1 text-sm font-semibold text-green-700 hover:underline"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            {r.phone}
+                          </a>
+                          {r.message && <p className="text-sm text-gray-600 mt-1.5">{r.message}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {/* Specs */}
                 <div className={`grid grid-cols-2 gap-4 ${specCount >= 5 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'}`}>

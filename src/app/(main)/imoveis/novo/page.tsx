@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import NewPropertyForm from '@/components/imoveis/NewPropertyForm'
 import { AlertCircle } from 'lucide-react'
+import { prisma } from '@/lib/prisma'
 
 export default async function NovoImovelPage() {
   const session = await auth()
@@ -13,6 +14,10 @@ export default async function NovoImovelPage() {
 
   // Avisa do limite do plano antes de a pessoa preencher tudo
   const limitError = await listingLimitError(session.user.id)
+  const anunciante = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { showWhatsapp: true },
+  })
 
   return (
     <>
@@ -42,7 +47,7 @@ export default async function NovoImovelPage() {
               </div>
             </div>
           ) : (
-            <NewPropertyForm userId={session.user.id} />
+            <NewPropertyForm userId={session.user.id} mostrarWhatsapp={!!anunciante?.showWhatsapp} />
           )}
         </div>
       </main>

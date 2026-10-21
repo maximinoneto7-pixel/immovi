@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { SITE_URL } from '@/lib/site'
 
 // ─── Cliente ──────────────────────────────────────────────────────────────────
 
@@ -1017,4 +1018,41 @@ export async function sendPlanEndedEmail(
   `, 'Sua conta voltou para o plano Básico')
 
   return send(to, 'Sua conta voltou para o plano Básico', html)
+}
+
+// ─── Recado de quem não tem conta ────────────────────────────────────────────
+
+export async function sendRecadoEmail(d: {
+  to: string
+  ownerName: string
+  propertyTitle: string
+  propertyId: string
+  name: string
+  phone: string
+  message?: string | null
+  linkWhatsapp?: string | null
+}) {
+  const html = layout(`
+    <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Olá, <strong style="color:#111827;">${d.ownerName}</strong></p>
+    <h1 style="color:#111827;font-size:22px;margin:0 0 14px;">Alguém deixou o telefone no seu anúncio</h1>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:20px;">
+      <p style="color:#111827;font-size:16px;font-weight:700;margin:0 0 6px;">${d.name}</p>
+      <p style="color:#111827;font-size:18px;font-weight:700;margin:0 0 10px;letter-spacing:.5px;">${d.phone}</p>
+      ${d.message ? `<p style="color:#4b5563;font-size:14px;margin:0;font-style:italic;">"${d.message}"</p>` : ''}
+    </div>
+
+    <p style="color:#6b7280;font-size:14px;margin:0 0 16px;">
+      Sobre o anúncio <strong style="color:#111827;">${d.propertyTitle}</strong>.
+      Quem procura imóvel costuma falar com vários anunciantes no mesmo dia — responder rápido faz diferença.
+    </p>
+
+    ${d.linkWhatsapp ? `<p style="margin:0 0 18px;"><a href="${d.linkWhatsapp}" style="display:inline-block;background:#22c55e;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 22px;border-radius:10px;">Chamar no WhatsApp</a></p>` : ''}
+
+    <p style="color:#9ca3af;font-size:13px;margin:0;">
+      <a href="${SITE_URL}/imoveis/${d.propertyId}" style="color:#4f46e5;text-decoration:none;">Ver o anúncio</a>
+    </p>
+  `, `${d.name} deixou o telefone: ${d.phone}`)
+
+  return send(d.to, `Novo contato no seu anúncio: ${d.name}`, html)
 }

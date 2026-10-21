@@ -27,6 +27,12 @@ export function linkDoWhatsapp(phone: string | null | undefined, texto: string):
   return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`
 }
 
+/** Resposta pronta do anunciante a quem deixou recado no anúncio */
+export function recadoDeResposta(nome: string, titulo: string) {
+  const primeiro = nome.split(' ')[0]
+  return `Olá, ${primeiro}! Sou o anunciante do imóvel "${titulo}" na Immovi. Vi que você deixou seu contato.`
+}
+
 /** Primeira mensagem sugerida a quem clica no botão do anúncio */
 export function recadoDoAnuncio(titulo: string, url: string) {
   return `Olá! Vi este anúncio na Immovi e tenho interesse:\n\n${titulo}\n${url}`

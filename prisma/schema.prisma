@@ -191,6 +191,7 @@ model Property {
   reports       Report[]
   offers        Offer[]
   visits        Visit[]
+  recados       Recado[]
   visitAvailability VisitAvailability?
 
   // Índices das buscas: situação sempre entra, combinada com cidade, estado, tipo e data
@@ -613,4 +614,23 @@ model PushSubscription {
   user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/// Recado de quem não tem conta: o interessado deixa nome e telefone no anúncio
+/// e o anunciante recebe na hora. Sem isso, quem paga pelo anúncio depende de o
+/// interessado criar conta antes de falar com ele.
+model Recado {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name       String
+  phone      String
+  message    String?
+  /// Guardado só para conter abuso (limite por hora), nunca exibido
+  ip         String?
+  readAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId, createdAt])
+  @@index([ip, createdAt])
 }

@@ -27,6 +27,11 @@ export default async function EditarImovelPage({ params }: { params: Promise<{ i
   const ehDono = property && property.ownerId === session.user.id
   if (!property || !ehDono || property.status === 'DELETED') notFound()
 
+  const anunciante = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { showWhatsapp: true },
+  })
+
   return (
     <>
       <Header user={session.user as any} />
@@ -47,6 +52,7 @@ export default async function EditarImovelPage({ params }: { params: Promise<{ i
           <NewPropertyForm
             userId={session.user.id}
             propertyId={id}
+            mostrarWhatsapp={!!anunciante?.showWhatsapp}
             initial={{
               title: property.title,
               description: property.description,

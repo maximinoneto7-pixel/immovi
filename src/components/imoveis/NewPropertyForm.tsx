@@ -48,9 +48,11 @@ interface NewPropertyFormProps {
   /** Com propertyId + initial o formulário edita o anúncio em vez de publicar um novo */
   propertyId?: string
   initial?: EditableProperty
+  /** Preferência atual do anunciante: mostrar o WhatsApp dele no anúncio */
+  mostrarWhatsapp?: boolean
 }
 
-export default function NewPropertyForm({ userId, propertyId, initial }: NewPropertyFormProps) {
+export default function NewPropertyForm({ userId, propertyId, initial, mostrarWhatsapp = false }: NewPropertyFormProps) {
   const router = useRouter()
   const editing = !!propertyId && !!initial
   const [isPending, startTransition] = useTransition()
@@ -660,6 +662,29 @@ export default function NewPropertyForm({ userId, propertyId, initial }: NewProp
             </div>
           </div>
         )}
+
+        {/* Como o interessado fala com você. A escolha vivia escondida na aba de
+            privacidade do perfil, então quase ninguém sabia que existia. */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="font-bold text-gray-900 text-lg border-b border-gray-100 pb-3 mb-4">Como querem falar com você</h2>
+          <input type="hidden" name="escolhaDoWhatsapp" value="1" />
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox" name="mostrarWhatsapp" value="true" defaultChecked={mostrarWhatsapp}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="text-sm">
+              <span className="font-medium text-gray-900">Mostrar meu WhatsApp no anúncio</span>
+              <span className="block text-gray-500 mt-0.5">
+                Qualquer pessoa que abrir o anúncio vê um botão que chama o seu número, sem precisar
+                de conta. É o caminho mais curto até o telefone tocar — e você pode desligar quando quiser.
+              </span>
+            </span>
+          </label>
+          <p className="text-xs text-gray-400 mt-3">
+            Desligado, quem não tem conta só consegue deixar nome e telefone para você chamar.
+          </p>
+        </div>
 
         {/* Botão de publicar / salvar */}
         {editing ? (
