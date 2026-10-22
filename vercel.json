@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node scripts/set-prisma-provider.mjs && npx prisma generate && next build",
+  "buildCommand": "node scripts/set-prisma-provider.mjs && node scripts/aplicar-migrations.mjs && npx prisma generate && next build",
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": [
