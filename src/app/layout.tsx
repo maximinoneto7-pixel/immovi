@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono, Plus_Jakarta_Sans } from 'next/font/google'
 import { SITE_URL } from '@/lib/site'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import Medicao from '@/components/layout/Medicao'
 import './globals.css'
 
 const geistSans = Geist({
@@ -46,6 +49,10 @@ export default function RootLayout({
     <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} ${jakarta.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
+        {/* Medição: sem ela, não dá para saber de onde vem quem chega nem onde desiste */}
+        <Medicao />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
