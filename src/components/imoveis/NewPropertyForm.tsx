@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import PhotoUpload, { type UploadedPhoto } from '@/components/common/PhotoUpload'
 import LocationPicker, { type LocationPickerHandle } from '@/components/imoveis/LocationPicker'
+import PublicarEmNomeDe from '@/components/imoveis/PublicarEmNomeDe'
 
 const PRESET_FEATURES = [
   'Piscina', 'Churrasqueira', 'Portaria 24h', 'Portão eletrônico', 'Cerca elétrica',
@@ -50,9 +51,12 @@ interface NewPropertyFormProps {
   initial?: EditableProperty
   /** Preferência atual do anunciante: mostrar o WhatsApp dele no anúncio */
   mostrarWhatsapp?: boolean
+  /** Administrador pode publicar em nome de outra pessoa */
+  ehAdmin?: boolean
+  meuNome?: string
 }
 
-export default function NewPropertyForm({ userId, propertyId, initial, mostrarWhatsapp = false }: NewPropertyFormProps) {
+export default function NewPropertyForm({ userId, propertyId, initial, mostrarWhatsapp = false, ehAdmin = false, meuNome = 'você' }: NewPropertyFormProps) {
   const router = useRouter()
   const editing = !!propertyId && !!initial
   const [isPending, startTransition] = useTransition()
@@ -253,6 +257,10 @@ export default function NewPropertyForm({ userId, propertyId, initial, mostrarWh
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Cadastrar pelo dono: só administrador, e só ao publicar (editar
+            continua sendo exclusividade de quem é dono do anúncio). */}
+        {ehAdmin && !editing && <PublicarEmNomeDe meuNome={meuNome} />}
+
         {/* ─── SEÇÃO 1: Básico ─── */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
           <h2 className="font-bold text-gray-900 text-lg border-b border-gray-100 pb-3">

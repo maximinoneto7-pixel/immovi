@@ -47,7 +47,12 @@ export default async function NovoImovelPage() {
               </div>
             </div>
           ) : (
-            <NewPropertyForm userId={session.user.id} mostrarWhatsapp={!!anunciante?.showWhatsapp} />
+            <NewPropertyForm
+              userId={session.user.id}
+              mostrarWhatsapp={!!anunciante?.showWhatsapp}
+              ehAdmin={session.user.role === 'ADMIN'}
+              meuNome={session.user.name || 'você'}
+            />
           )}
         </div>
       </main>

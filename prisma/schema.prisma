@@ -82,6 +82,7 @@ model User {
   accounts             Account[]
   sessions             Session[]
   properties           Property[]
+  anunciosCadastrados  Property[] @relation("AnunciosCadastrados")
   favorites            Favorite[]
   sentMessages         Message[]               @relation("SentMessages")
   receivedMessages     Message[]               @relation("ReceivedMessages")
@@ -179,6 +180,12 @@ model Property {
 
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  /// Quando o anúncio foi cadastrado por outra pessoa (administrador publicando
+  /// em nome do dono), fica registrado quem fez. O dono continua sendo o dono:
+  /// é ele que recebe os contatos e é só ele que edita.
+  publicadoPorId String?
+  publicadoPor   User?   @relation("AnunciosCadastrados", fields: [publicadoPorId], references: [id], onDelete: SetNull)
 
   images        PropertyImage[]
   favorites     Favorite[]

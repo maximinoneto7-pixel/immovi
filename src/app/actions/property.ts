@@ -116,6 +116,31 @@ async function guardarEscolhaDoWhatsapp(formData: FormData, userId: string) {
   await prisma.user.update({ where: { id: userId }, data: { showWhatsapp: mostrar } })
 }
 
+/**
+ * Decide de quem é o anúncio.
+ *
+ * Normalmente é de quem está publicando. O administrador pode cadastrar pelo
+ * dono — foi o que destravou o cadastro dos primeiros anúncios, que antes exigia
+ * entrar na conta de cada pessoa. Quem é escolhido vira o dono de fato: recebe os
+ * contatos e é o único que edita depois. Fica registrado quem cadastrou.
+ */
+async function donoDoAnuncio(formData: FormData, session: { user: { id: string; role?: string | null } }) {
+  const pedido = ((formData.get('donoId') as string) || '').trim()
+  if (!pedido || pedido === session.user.id) return { ownerId: session.user.id, publicadoPorId: null }
+
+  if (session.user.role !== 'ADMIN') {
+    return { erro: 'Só a administração pode publicar em nome de outra pessoa.' }
+  }
+
+  const dono = await prisma.user.findFirst({
+    where: { id: pedido, deletedAt: null, suspendedAt: null },
+    select: { id: true, name: true },
+  })
+  if (!dono) return { erro: 'Não encontrei essa conta, ou ela está suspensa.' }
+
+  return { ownerId: dono.id, publicadoPorId: session.user.id, nomeDoDono: dono.name }
+}
+
 async function createFromForm(formData: FormData) {
   try {
     return await publicarAnuncio(formData)
@@ -132,20 +157,29 @@ async function publicarAnuncio(formData: FormData) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Não autenticado.' } as const
 
-  // Sem e-mail confirmado, ninguém publica em nome de outra pessoa
-  if (!(await emailGateOpen(session.user.id))) return { error: UNVERIFIED_PUBLISH_ERROR } as const
+  const dono = await donoDoAnuncio(formData, session as { user: { id: string; role?: string | null } })
+  if ('erro' in dono) return { error: dono.erro } as const
+  const cadastrandoPeloDono = !!dono.publicadoPorId
+
+  // Sem e-mail confirmado, ninguém publica em nome de outra pessoa. Não vale para
+  // o administrador cadastrando pelo dono: ali a conferência é a decisão dele.
+  if (!cadastrandoPeloDono && !(await emailGateOpen(session.user.id))) {
+    return { error: UNVERIFIED_PUBLISH_ERROR } as const
+  }
 
   const { data, images, features, error } = readPropertyForm(formData)
   if (error) return { error } as const
 
-  const limitError = await listingLimitError(session.user.id)
+  // O limite é do dono do anúncio, não de quem digitou
+  const limitError = await listingLimitError(dono.ownerId)
   if (limitError) return { error: limitError } as const
 
   const { lat, lng } = await resolveCoords(formData, data.address, data.city, data.state)
   const property = await prisma.property.create({
     data: {
       ...data,
-      ownerId: session.user.id,
+      ownerId: dono.ownerId,
+      publicadoPorId: dono.publicadoPorId,
       latitude: lat,
       longitude: lng,
       images: { create: images },
@@ -157,12 +191,15 @@ async function publicarAnuncio(formData: FormData) {
     registrar('ANUNCIO_CRIADO', {
       userId: session.user!.id, email: session.user!.email,
       ...origemDa(await headers()),
-      detail: `${property.id} · ${property.title}`,
+      detail: cadastrandoPeloDono
+        ? `${property.id} · ${property.title} · cadastrado para ${dono.nomeDoDono}`
+        : `${property.id} · ${property.title}`,
     })
   })
 
-  await sincronizarRanking(session.user.id)
-  await guardarEscolhaDoWhatsapp(formData, session.user.id)
+  await sincronizarRanking(dono.ownerId)
+  // A preferência de WhatsApp é de quem vai receber o contato
+  await guardarEscolhaDoWhatsapp(formData, dono.ownerId)
 
   revalidatePath('/imoveis')
   revalidatePath('/')
