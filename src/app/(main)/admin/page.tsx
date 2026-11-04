@@ -68,6 +68,9 @@ export default async function AdminPage() {
 
   const rotina = await estadoDaRotina()
 
+  // Quantos problemas estão esperando olhada — vira o número vermelho no menu
+  const errosAbertos = await prisma.erroRegistrado.count({ where: { resolvidoEm: null } })
+
   const usersByRole = await prisma.user.groupBy({
     by: ['role'],
     _count: { _all: true },
@@ -142,6 +145,12 @@ export default async function AdminPage() {
               </Link>
               <Link href="/admin/conversas" className="flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" /> Conversas
+              </Link>
+              <Link href="/admin/erros" className="flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" /> Erros
+                {errosAbertos > 0 && (
+                  <span className="px-1.5 py-0.5 text-xs font-bold text-white bg-amber-500 rounded-full">{errosAbertos}</span>
+                )}
               </Link>
               <Link href="/admin/trafego" className="flex-none px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" /> Tráfego

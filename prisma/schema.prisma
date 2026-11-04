@@ -634,3 +634,24 @@ model Recado {
   @@index([propertyId, createdAt])
   @@index([ip, createdAt])
 }
+
+/// Erro que a plataforma registrou. Antes o aviso só virava e-mail, e o controle
+/// de repetição vivia na memória do servidor — na Vercel, cada instância tem a
+/// sua, então repetição sumia sem deixar rastro e o motivo real se perdia.
+/// Agrupado por `chave` (resumo de onde + mensagem) para contar as repetições
+/// em vez de empilhar linhas iguais.
+model ErroRegistrado {
+  id          String    @id @default(cuid())
+  chave       String    @unique
+  onde        String
+  mensagem    String
+  pilha       String?
+  detalhes    String?
+  vezes       Int       @default(1)
+  avisadoEm   DateTime?
+  resolvidoEm DateTime?
+  primeiraEm  DateTime  @default(now())
+  ultimaEm    DateTime  @default(now())
+
+  @@index([resolvidoEm, ultimaEm])
+}
