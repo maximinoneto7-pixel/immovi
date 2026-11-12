@@ -159,7 +159,9 @@ export default function LocationAutocomplete({
           autoComplete="off"
           spellCheck={false}
           className={cn(
-            'flex-1 bg-transparent text-gray-900 placeholder-gray-400 text-sm outline-none',
+            // min-w-0: campo de texto tem largura mínima própria e, sem isto, não
+            // encolhe — o texto atravessa a borda e invade o campo do lado.
+            'flex-1 min-w-0 bg-transparent text-gray-900 placeholder-gray-400 text-sm outline-none',
             inputClassName
           )}
         />

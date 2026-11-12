@@ -53,8 +53,11 @@ export default function SearchBar({ className = '', initialValues }: SearchBarPr
       onSubmit={handleSearch}
       className={`bg-white rounded-2xl shadow-2xl ${className}`}
     >
-      {/* Mobile: empilhado */}
-      <div className="flex flex-col sm:hidden gap-0 divide-y divide-gray-100">
+      {/* Empilhado. Vale até 1024px, e não só no celular: a linha única precisa de
+          uns 550px só para os dois seletores e o botão, que têm largura fixa. Entre
+          640px e 1024px — meia tela de computador — sobrava quase nada para a
+          cidade, e o texto dela atravessava para cima do campo vizinho. */}
+      <div className="flex flex-col lg:hidden gap-0 divide-y divide-gray-100">
         <div className="px-4 py-3">
           <LocationAutocomplete value={location} onChange={handleLocationChange} placeholder="Cidade, estado ou bairro..." />
         </div>
@@ -67,7 +70,7 @@ export default function SearchBar({ className = '', initialValues }: SearchBarPr
           </select>
         </div>
         <div className="flex items-center gap-2 px-4 py-3">
-          <ChevronDown className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+          <ArrowLeftRight className="w-4 h-4 text-indigo-500 flex-shrink-0" />
           <select value={listingType} onChange={(e) => setListingType(e.target.value)}
             className="flex-1 bg-transparent text-sm text-gray-700 outline-none">
             <option value="">Comprar ou Alugar</option>
@@ -81,8 +84,8 @@ export default function SearchBar({ className = '', initialValues }: SearchBarPr
         </button>
       </div>
 
-      {/* Desktop: linha única — altura e larguras fixas para nunca cortar texto */}
-      <div className="hidden sm:flex items-stretch h-16">
+      {/* Linha única, só quando há largura de sobra para ela caber inteira */}
+      <div className="hidden lg:flex items-stretch h-16">
 
         {/* Localização — expande para preencher o espaço restante */}
         <div className="flex items-center px-5 flex-1 min-w-0 border-r border-gray-100">
