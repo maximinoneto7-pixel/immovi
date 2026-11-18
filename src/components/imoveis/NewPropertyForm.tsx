@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useTransition } from 'react'
+import { useState, useRef, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createPropertyAndReturn, updateProperty } from '@/app/actions/property'
@@ -18,6 +18,9 @@ import { cn } from '@/lib/utils'
 import PhotoUpload, { type UploadedPhoto } from '@/components/common/PhotoUpload'
 import LocationPicker, { type LocationPickerHandle } from '@/components/imoveis/LocationPicker'
 import PublicarEmNomeDe from '@/components/imoveis/PublicarEmNomeDe'
+import LocationAutocomplete from '@/components/common/LocationAutocomplete'
+import EnvioDeVideo from '@/components/imoveis/EnvioDeVideo'
+import { ehArquivoDeVideo } from '@/lib/video'
 
 const PRESET_FEATURES = [
   'Piscina', 'Churrasqueira', 'Portaria 24h', 'Portão eletrônico', 'Cerca elétrica',
@@ -92,8 +95,15 @@ export default function NewPropertyForm({ userId, propertyId, initial, mostrarWh
   const [videoUrl, setVideoUrl] = useState(initial?.videoUrl ?? '')
 
   // Localização no mapa
+  // Cidade e estado agora vêm da lista oficial, então viram estado do React
+  const [cidade, setCidade] = useState(initial?.city ?? '')
+  const [uf, setUf] = useState(initial?.state ?? '')
+  const [endereco, setEndereco] = useState(initial?.address ?? '')
+  // Alfinete posto à mão manda: o automático para de mexer depois disso
+  const alfineteNaMao = useRef(!!initial?.latitude)
+  const buscaAutomatica = useRef(false)
+
   const addressInputRef = useRef<HTMLInputElement>(null)
-  const cityInputRef = useRef<HTMLInputElement>(null)
   const stateSelectRef = useRef<HTMLSelectElement>(null)
   const locationPickerRef = useRef<LocationPickerHandle>(null)
   const initialCoords = initial?.latitude != null && initial?.longitude != null
@@ -137,6 +147,32 @@ export default function NewPropertyForm({ userId, propertyId, initial, mostrarWh
     setDocResult(null)
     setError('')
   }
+
+  /**
+   * O mapa acompanha o endereço.
+   *
+   * Antes ele ficava parado no centro do Brasil até alguém clicar em buscar, e
+   * quem não percebia publicava sem posição — o anúncio sumia do mapa da busca.
+   * Espera a pessoa parar de digitar, tanto por educação com o OpenStreetMap,
+   * que pede no máximo uma consulta por segundo, quanto para não ficar pulando
+   * de lugar enquanto ela escreve.
+   */
+  useEffect(() => {
+    if (alfineteNaMao.current) return
+    if (!cidade || !uf) return
+
+    const tempo = setTimeout(async () => {
+      if (alfineteNaMao.current) return
+      buscaAutomatica.current = true
+      try {
+        await locationPickerRef.current?.buscar()
+      } finally {
+        buscaAutomatica.current = false
+      }
+    }, 1200)
+
+    return () => clearTimeout(tempo)
+  }, [cidade, uf, endereco])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -439,18 +475,37 @@ export default function NewPropertyForm({ userId, propertyId, initial, mostrarWh
           <h2 className="font-bold text-gray-900 text-lg border-b border-gray-100 pb-3">2. Localização</h2>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Endereço *</label>
-            <input ref={addressInputRef} type="text" name="address" required placeholder="Rua, número" defaultValue={initial?.address}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <input
+              ref={addressInputRef} type="text" name="address" required placeholder="Rua, número"
+              value={endereco} onChange={(e) => setEndereco(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Cidade *</label>
-              <input ref={cityInputRef} type="text" name="city" required placeholder="Ex: São Paulo" defaultValue={initial?.city}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              {/* A mesma lista de municípios da busca. Digitada à mão, a cidade
+                  vira outra página: "S. Luís de Montes Belos" não encontra os
+                  anúncios de "São Luís de Montes Belos". */}
+              <div className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-indigo-500">
+                <LocationAutocomplete
+                  value={cidade}
+                  onChange={(texto, cidadeEscolhida, ufEscolhida) => {
+                    setCidade(cidadeEscolhida || texto)
+                    if (ufEscolhida) setUf(ufEscolhida)
+                  }}
+                  placeholder="Comece a digitar a cidade"
+                />
+              </div>
+              <input type="hidden" name="city" value={cidade} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Estado *</label>
-              <select ref={stateSelectRef} name="state" required defaultValue={initial?.state ?? ''} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+              <select
+                ref={stateSelectRef} name="state" required
+                value={uf} onChange={(e) => setUf(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
                 <option value="">Selecione</option>
                 {STATES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -473,10 +528,16 @@ export default function NewPropertyForm({ userId, propertyId, initial, mostrarWh
             ref={locationPickerRef}
             getAddress={() => ({
               address: addressInputRef.current?.value || '',
-              city: cityInputRef.current?.value || '',
-              state: stateSelectRef.current?.value || '',
+              city: cidade,
+              state: uf,
             })}
-            onChange={(lat, lng) => setCoords({ lat, lng })}
+            onChange={(lat, lng) => {
+              // Clique ou arrasto da pessoa manda: a partir daí o automático não
+              // encosta mais no alfinete. A busca automática também passa por
+              // aqui, e essa não conta como decisão de ninguém.
+              if (!buscaAutomatica.current) alfineteNaMao.current = true
+              setCoords({ lat, lng })
+            }}
             initial={initialCoords}
           />
         </div>
@@ -577,18 +638,24 @@ export default function NewPropertyForm({ userId, propertyId, initial, mostrarWh
                 <div className="text-xs text-indigo-200">Imóveis com vídeo recebem 4× mais contatos → Ver guia</div>
               </div>
             </a>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                URL do vídeo <span className="text-gray-400 font-normal">(YouTube, Google Drive etc.)</span>
-              </label>
-              <input
-                type="url"
-                value={videoUrl}
-                onChange={e => setVideoUrl(e.target.value)}
-                placeholder="https://youtube.com/watch?v=..."
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+            <EnvioDeVideo valor={videoUrl} onChange={setVideoUrl} />
+
+            {/* O link continua valendo para quem já tem o vídeo publicado. Fica
+                recolhido porque o caminho esperado agora é mandar o arquivo. */}
+            {!ehArquivoDeVideo(videoUrl) && (
+              <details className="group">
+                <summary className="text-xs text-gray-500 cursor-pointer hover:text-indigo-600">
+                  Já tem o vídeo no YouTube ou no Drive? Colar o link
+                </summary>
+                <input
+                  type="url"
+                  value={videoUrl}
+                  onChange={e => setVideoUrl(e.target.value)}
+                  placeholder="https://youtube.com/watch?v=..."
+                  className="w-full mt-2 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </details>
+            )}
           </div>
         </div>
 

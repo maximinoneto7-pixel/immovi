@@ -19,7 +19,7 @@ import { diasDisponiveis } from '@/lib/visitas'
 import ListingActions from '@/components/imoveis/ListingActions'
 import ReportListing from '@/components/imoveis/ReportListing'
 import CompareBar from '@/components/imoveis/CompareBar'
-import { getVideoEmbedUrl } from '@/lib/video'
+import { getVideoEmbedUrl, ehArquivoDeVideo } from '@/lib/video'
 import {
   Bed, Bath, Car, Maximize2, MapPin, Shield, Star, Phone,
   MessageCircle, Heart, Calendar, Eye, CheckCircle2, Pause,
@@ -282,13 +282,25 @@ export default async function PropertyDetailPage({
               {/* Vídeo do imóvel */}
               {property.videoUrl && (() => {
                 const embedUrl = getVideoEmbedUrl(property.videoUrl)
+                // Vídeo enviado pelo próprio anunciante: toca aqui mesmo, com a
+                // foto de capa como primeira imagem, sem moldura de terceiro.
+                const arquivo = ehArquivoDeVideo(property.videoUrl)
+                const capa = property.images.find((img) => img.isCover) ?? property.images[0]
                 return (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                     <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
                       <Video className="w-5 h-5 text-indigo-500" />
                       Tour em vídeo
                     </h2>
-                    {embedUrl ? (
+                    {arquivo ? (
+                      <video
+                        src={property.videoUrl}
+                        controls
+                        preload="metadata"
+                        poster={capa?.url}
+                        className="w-full rounded-xl bg-black aspect-video"
+                      />
+                    ) : embedUrl ? (
                       <div className="aspect-video rounded-xl overflow-hidden bg-gray-100">
                         <iframe
                           src={embedUrl}

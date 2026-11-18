@@ -5,6 +5,8 @@ import { MapPin, LocateFixed, Loader2 } from 'lucide-react'
 
 export interface LocationPickerHandle {
   setLatLng: (lat: number, lng: number) => void
+  /** Procura pelo endereço preenchido no formulário e põe o alfinete */
+  buscar: () => Promise<void>
 }
 
 interface LocationPickerProps {
@@ -88,6 +90,8 @@ const LocationPicker = forwardRef<LocationPickerHandle, LocationPickerProps>(
         markerRef.current.setOpacity(1)
         setHasPin(true)
       },
+      // Embrulhado numa seta porque handleSearch é declarado adiante
+      buscar: () => handleSearch(),
     }))
 
     const handleSearch = async () => {

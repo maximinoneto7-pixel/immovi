@@ -10,3 +10,14 @@ export function getVideoEmbedUrl(url: string): string | null {
 
   return null
 }
+
+/**
+ * Vídeo enviado pelo anunciante, em vez de link de plataforma.
+ *
+ * Quem grava com o celular manda o arquivo; ele vai direto do aparelho para o
+ * armazenamento e chega aqui como endereço de arquivo, não de página. Esse toca
+ * dentro do anúncio, sem moldura de terceiro.
+ */
+export function ehArquivoDeVideo(url: string): boolean {
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url)
+}
