@@ -1,5 +1,6 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import { auth } from '@/lib/auth'
+import { avisarErro } from '@/lib/alerta-erro'
 
 /**
  * Envio de vídeo do imóvel.
@@ -38,6 +39,19 @@ export async function POST(request: Request) {
 
     return Response.json(resposta)
   } catch (err) {
-    return Response.json({ error: (err as Error).message }, { status: 400 })
+    const motivo = (err as Error).message || ''
+
+    // Falta de sessão é recusa esperada e a mensagem já é para a pessoa ler.
+    // Qualquer outra coisa é problema nosso: vai para /admin/erros com o motivo
+    // técnico, e quem está anunciando recebe uma frase que faz sentido.
+    if (/conta/i.test(motivo)) {
+      return Response.json({ error: motivo }, { status: 401 })
+    }
+
+    await avisarErro('envio de vídeo do imóvel', err).catch(() => {})
+    return Response.json(
+      { error: 'Não consegui preparar o envio do vídeo agora. Já fui avisado do problema.' },
+      { status: 500 }
+    )
   }
 }
