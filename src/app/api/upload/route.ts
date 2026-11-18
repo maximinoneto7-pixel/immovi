@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth'
 import { uploadMultiple, validateFile } from '@/lib/storage'
+import { avisarErro } from '@/lib/alerta-erro'
 
 export const maxDuration = 30
 
@@ -40,7 +41,13 @@ export async function POST(request: Request) {
       })),
     })
   } catch (err: any) {
-    console.error('Erro no upload:', err)
-    return Response.json({ error: err.message || 'Erro ao fazer upload.' }, { status: 500 })
+    // A mensagem crua vinha da biblioteca de armazenamento e ia inteira para a
+    // tela: "No read-write token found" não diz nada a quem está anunciando, e
+    // nós não ficávamos sabendo que o envio parou de funcionar.
+    await avisarErro('envio de arquivo', err).catch(() => {})
+    return Response.json(
+      { error: 'Não consegui guardar o arquivo agora. Já fui avisado do problema — tente de novo em instantes.' },
+      { status: 500 }
+    )
   }
 }
