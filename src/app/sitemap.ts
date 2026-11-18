@@ -1,7 +1,18 @@
 import { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
+import { SITE_URL } from '@/lib/site'
 
-const BASE_URL = process.env.NEXTAUTH_URL || 'https://immovi.com.br'
+/**
+ * O mapa do site era gerado uma vez, no build, e só mudava quando havia deploy.
+ * Anúncio publicado depois ficava invisível para o Google até alguém mexer no
+ * código por outro motivo — foi o que aconteceu com o lote de Moiporá. Agora ele
+ * se refaz de hora em hora.
+ */
+export const revalidate = 3600
+
+// O endereço oficial é o com www: o sem www responde 308 e faria todo buscador
+// passar por um desvio. Vem de lib/site, que já normaliza isso.
+const BASE_URL = SITE_URL
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [properties, cities] = await Promise.all([
